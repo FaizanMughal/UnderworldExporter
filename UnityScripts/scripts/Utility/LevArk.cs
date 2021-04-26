@@ -27,11 +27,11 @@ public class LevArk : Loader {
     /// 80 map notes - top copy for the moment
     public static void WriteBackLevArkUW2(int slotNo)
     {
-        int NoOfBlocks = 320;
+            int NoOfBlocks = 320;
         DataLoader.UWBlock[] blockData = new DataLoader.UWBlock[NoOfBlocks];
 
         //First update the object list so as to match indices properly	
-        ObjectLoader.UpdateObjectList(CurrentTileMap(), CurrentObjectList());
+        ObjectLoader.RebuildObjectListUW(CurrentTileMap(), CurrentObjectList());
 
         //First block is always here.
         long AddressToCopyFrom = 0;
@@ -288,7 +288,7 @@ public class LevArk : Loader {
         DataLoader.UWBlock[] blockData = new DataLoader.UWBlock[45];
 
         //First update the object list so as to match indices properly
-        ObjectLoader.UpdateObjectList(CurrentTileMap(), CurrentObjectList());
+        ObjectLoader.RebuildObjectListUW(CurrentTileMap(), CurrentObjectList());
 
         //First block is always here.
         long AddressToCopyFrom = 0;

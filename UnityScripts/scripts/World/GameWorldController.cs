@@ -156,6 +156,7 @@ public class GameWorldController : UWEBase
     public GameObject LevelModel;
 
     public GameObject TNovaLevelModel;
+    public Terrain TNovaTerrain;
 
     /// <summary>
     /// The level model parent object
@@ -269,6 +270,9 @@ public class GameWorldController : UWEBase
     /// The object dat file
     /// </summary>
     public ObjectDatLoader objDat;
+
+
+    public MagicLookupTable magiclookup;
 
     /// <summary>
     /// The common object properties for uw
@@ -629,7 +633,6 @@ public class GameWorldController : UWEBase
         UWClass._RES = res;//game;
         keybinds.ApplyBindings();//Applies keybinds to certain controls
 
-
         //Set some layers for the AI to use to detect walls and doors.
         MapMeshLayerMask = 1 << LevelModel.layer;
         DoorLayerMask = 1 << LayerMask.NameToLayer("Doors");
@@ -659,6 +662,7 @@ public class GameWorldController : UWEBase
                 objDat = new ObjectDatLoader();
                 commonObject = new CommonObjectDatLoader();
                 palLoader = new PaletteLoader("DATA" + sep + "PALS.DAT", -1);
+                magiclookup = new MagicLookupTable();
                 //Create palette cycles and store them in the palette array
                 PaletteLoader palCycler = new PaletteLoader("DATA" + sep + "PALS.DAT", -1);
 
@@ -732,9 +736,10 @@ public class GameWorldController : UWEBase
                 bGenNavMeshes = false;
                 UWHUD.instance.gameObject.SetActive(false);
                 UWHUD.instance.window.SetFullScreen();
-                UWCharacter.Instance.isFlying = true;
+                //UWCharacter.Instance.isFlying = true;
                 UWCharacter.Instance.playerMotor.enabled = true;
                 UWCharacter.Instance.playerCam.backgroundColor = Color.white;
+                UWCharacter.Instance.transform.position = new Vector3(128f, 256f, 128f);
                 SwitchTNovaMap("");
                 return;
             case GAME_SHOCK:
@@ -943,22 +948,22 @@ public class GameWorldController : UWEBase
 
                 if (UWEBase._RES != UWEBase.GAME_SHOCK)
                 {
-                    DataLoader.UWBlock lev_ark_block = new DataLoader.UWBlock();//Data containing tilemap.
-                    DataLoader.UWBlock tex_ark_block = new DataLoader.UWBlock();//Data containing texture map
-                    DataLoader.UWBlock ovl_ark_block = new DataLoader.UWBlock();//Data containing animation overlays
+                    // DataLoader.UWBlock lev_ark_block = new DataLoader.UWBlock();//Data containing tilemap.
+                    //DataLoader.UWBlock tex_ark_block = new DataLoader.UWBlock();//Data containing texture map
+                    //DataLoader.UWBlock ovl_ark_block = new DataLoader.UWBlock();//Data containing animation overlays
 
                     //Load Lev.ark data for the objects and tile map
-                    lev_ark_block = LoadLevArkBlock(newLevelNo);
+                    Tilemaps[newLevelNo].lev_ark_block = LoadLevArkBlock(newLevelNo);
 
                     if (_RES == GAME_UW1)
                     {//Load the overlays.
-                        DataLoader.LoadUWBlock(LevArk.lev_ark_file_data, newLevelNo + 9, 0x180, out ovl_ark_block);
+                        DataLoader.LoadUWBlock(LevArk.lev_ark_file_data, newLevelNo + 9, 0x180, out Tilemaps[newLevelNo].ovl_ark_block);
                     }
 
                     //Load lev.ark data fror the texture map.
-                    tex_ark_block = LoadTexArkBlock(newLevelNo, tex_ark_block);
+                    Tilemaps[newLevelNo].tex_ark_block = LoadTexArkBlock(newLevelNo, Tilemaps[newLevelNo].tex_ark_block);
 
-                    if ((lev_ark_block.DataLen > 0) && (tex_ark_block.DataLen > 0))
+                    if ((Tilemaps[newLevelNo].lev_ark_block.DataLen > 0) && (Tilemaps[newLevelNo].tex_ark_block.DataLen > 0))
                     {
                         if (EnableUnderworldGenerator)
                         {
@@ -969,12 +974,12 @@ public class GameWorldController : UWEBase
                         }
                         else
                         {
-                            Tilemaps[newLevelNo].BuildTileMapUW(newLevelNo, lev_ark_block, tex_ark_block, ovl_ark_block);
+                            Tilemaps[newLevelNo].BuildTileMapUW(newLevelNo, Tilemaps[newLevelNo].lev_ark_block, Tilemaps[newLevelNo].tex_ark_block, Tilemaps[newLevelNo].ovl_ark_block);
                         }
 
                         //Load game objects from the levark data
                         objectList[newLevelNo] = new ObjectLoader();
-                        objectList[newLevelNo].LoadObjectList(Tilemaps[newLevelNo], lev_ark_block);
+                        objectList[newLevelNo].LoadObjectList(Tilemaps[newLevelNo], Tilemaps[newLevelNo].lev_ark_block);
 
                         if (CreateReports)
                         {
@@ -1023,7 +1028,7 @@ public class GameWorldController : UWEBase
             {//When changing from a level that has already loaded
                 if (UWEBase.EditorMode == false)
                 {
-                    ObjectLoader.UpdateObjectList(CurrentTileMap(), CurrentObjectList());
+                    ObjectLoader.RebuildObjectListUW(CurrentTileMap(), CurrentObjectList());
                 }
             }
 
@@ -1285,25 +1290,91 @@ public class GameWorldController : UWEBase
     }
 
     /// <summary>
-    /// Moves to world and assigns it to the world object list.
+    /// Moves to world (from inventory) and assigns it to the world object list.
     /// </summary>
     /// <returns>The to world.</returns>
     /// <param name="obj">Object.</param>
-    public static ObjectInteraction MoveToWorld(ObjectInteraction obj)
+    public static ObjectInteraction MoveToWorld(ObjectInteraction obj, bool staticObject = true)
     {
         //Add item to a free slot on the item list and point the instance back to this.
         obj.UpdatePosition();
-        //if (obj.transform.parent == GameWorldController.instance.DynamicObjectMarker())
-        //{
-        //		Debug.Log("Moving to world when object is already in world " + obj.name);
-        //}
+
         obj.transform.parent = GameWorldController.instance.DynamicObjectMarker();
-        ObjectLoader.AssignObjectToList(ref obj);
-        //	ObjectInteraction.UpdateLinkedList(obj, TileMap.ObjectStorageTile, TileMap.ObjectStorageTile, obj.tileX, obj.tileY);
-        //obj.next=0;
-        //obj.UpdatePosition();
-        //obj.tileX=-1;
-        //obj.tileY=-1;//Force an update to linked list.
+        //Find an index for the object.
+        int NewIndex = -1;
+        if (staticObject)
+        {
+            if (!CurrentObjectList().GetFreeStaticObject(out NewIndex))
+            {
+                Debug.Log("Unable to find a free static slot for this object");return null;
+            }
+            NewIndex = CurrentObjectList().GetStaticAtSlot(NewIndex);
+        }
+        else
+        {
+            if (!CurrentObjectList().GetFreeMobileObject(out NewIndex))
+            {
+                Debug.Log("Unable to find a free mobile slot for this object"); return null;
+            }
+            NewIndex = CurrentObjectList().GetMobileAtSlot(NewIndex);
+        }
+        //Destroy the existing object instance at the new slot.
+        if (CurrentObjectList().objInfo[NewIndex].instance !=null)
+        {
+            Destroy(CurrentObjectList().objInfo[NewIndex].instance.gameObject);
+        }
+
+
+        CurrentObjectList().objInfo[NewIndex] = new ObjectLoaderInfo(NewIndex,CurrentTileMap(),true);
+        //Copy existing static info from inventory to objectdata
+        for (int i =0; i<8;i++)
+        {
+            CurrentObjectList().objInfo[NewIndex].DataBuffer[CurrentObjectList().objInfo[NewIndex].PTR+i] = obj.BaseObjectData.InventoryData[i];
+        }
+        //Link the instances
+        CurrentObjectList().objInfo[NewIndex].instance = obj;
+        obj.BaseObjectData = CurrentObjectList().objInfo[NewIndex];
+
+        //Rename the instance
+        obj.transform.name = ObjectLoader.UniqueObjectName(obj.BaseObjectData);
+
+        Container cnt = obj.GetComponent<Container>();
+        if (cnt!=null)
+        {//Object has a container that has objects that need to be moved as well
+            for (int i = 0; i<cnt.items.GetUpperBound(0);i++)
+            {
+                if (cnt.items[i]!=null)
+                {
+                    MoveToWorld(cnt.items[i], true); //Move container objects as static objects into the world. (The parent might be mobile)
+                }              
+            }
+            
+            //Relink container contents
+            bool isNext = false;//What property should be updated.
+            ObjectInteraction parentItem = cnt.objInt();
+            parentItem.link = 0; //Assume no object in container.
+            for (int i = 0; i < cnt.items.GetUpperBound(0); i++)
+            {
+                if (cnt.items[i] != null)
+                {
+                    //linked or next item found.
+                    if (isNext)
+                    {
+                        parentItem.next = cnt.items[i].ObjectIndex;
+                    }
+                    else
+                    {
+                        parentItem.link = cnt.items[i].ObjectIndex;
+                        isNext = true; //any item after the first linked item must be a next.
+                    }
+                    parentItem = cnt.items[i];//Move to next item.
+                    parentItem.next = 0;//Assume next is going to be no object.                    
+                }
+            }
+        }
+
+        //ObjectLoader.AssignObjectToList(ref obj);
+
         obj.GetComponent<object_base>().MoveToWorldEvent();
         if (ConversationVM.InConversation)
         {
@@ -1311,9 +1382,7 @@ public class GameWorldController : UWEBase
             ConversationVM.BuildObjectList();//Reflect changes to object lists
         }
 
-        //obj.name = ObjectLoader.UniqueObjectName(obj.objectloaderinfo);
         return obj;
-        //Not needed???
     }
 
     /// <summary>
@@ -1327,19 +1396,58 @@ public class GameWorldController : UWEBase
 
 
     /// <summary>
-    /// Moves an object to inventory and removes it from the world map instance
+    /// Moves an object to inventory and removes it from the world map
     /// </summary>
     /// <param name="obj">Object.</param>
     public static void MoveToInventory(ObjectInteraction obj)
     {//Break the instance back to the object list
-        obj.objectloaderinfo.InUseFlag = 0;//This frees up the slot to be replaced with another item.	
-        obj.objectloaderinfo.instance = null;
+        ObjectInteraction.UnlinkItemFromTileMapChain(obj, obj.ObjectTileX, obj.ObjectTileY);
+
+        obj.transform.parent = GameWorldController.instance.InventoryMarker.transform;
+        //Copy loader data to obj.
+        char[] NewinventoryData = new char[8];
+        for (int i=0; i<8;i++)
+        {
+            NewinventoryData[i] = obj.BaseObjectData.DataBuffer[obj.BaseObjectData.PTR + i];
+        }
+        ObjectLoaderInfo newObj = new ObjectLoaderInfo(0,GameWorldController.CurrentTileMap(),false);
+        newObj.parentList = GameWorldController.instance.inventoryLoader;
+        newObj.InventoryData = NewinventoryData;
+
+        obj.BaseObjectData.InUseFlag = 0;//This frees up the slot to be replaced with another item.	
+        obj.BaseObjectData.instance = null;
         if (_RES == GAME_UW2)//Does this need to be done for uw1 as well.
         {
-            ObjectLoaderInfo.CleanUp(obj.objectloaderinfo);
+            ObjectLoaderInfo.CleanUp(obj.BaseObjectData);
         }
+        
+        if(obj.BaseObjectData.IsStatic)
+        {
+            CurrentObjectList().ReleaseFreeStaticObject(obj.BaseObjectData.index);
+        }
+        else
+        {
+            CurrentObjectList().ReleaseFreeMobileObject(obj.BaseObjectData.index);
+        }
+      
+
+        //Link instances
+        newObj.instance = obj;
+        obj.BaseObjectData = newObj;
+
+        Container cnt = obj.GetComponent<Container>();
+        if (cnt != null)
+        {//Object has a container that has objects that need to be moved as well
+            for (int i = 0; i < cnt.items.GetUpperBound(0); i++)
+            {
+                if (cnt.items[i] != null)
+                {
+                    MoveToInventory(cnt.items[i]); //Move container objects as static objects into the world. (The parent might be mobile)
+                }
+            }
+        }
+
         obj.GetComponent<object_base>().MoveToInventoryEvent();
-        //ObjectInteraction.UpdateLinkedList(obj, obj.tileX, obj.tileY, TileMap.ObjectStorageTile,TileMap.ObjectStorageTile);
         if (ConversationVM.InConversation)
         {
             ConversationVM.BuildObjectList();//Reflect changes to object lists
@@ -1644,7 +1752,7 @@ public class GameWorldController : UWEBase
         }
         else
         {
-            path = levelFileName;//Loader.BasePath + "MAPS\\roadmap.res";		
+            path = levelFileName;		
         }
 
         char[] archive_ark;
@@ -1655,11 +1763,25 @@ public class GameWorldController : UWEBase
             {
                 return;
             }
-            UWCharacter.Instance.playerCam.GetComponent<Light>().range = 200f;
-            UWCharacter.Instance.playerCam.farClipPlane = 3000f;
-            UWCharacter.Instance.playerCam.renderingPath = RenderingPath.DeferredShading;
-            TileMapRenderer.RenderTNovaMap(TNovaLevelModel.transform, lev_ark.data);
+            UWCharacter.Instance.playerCam.GetComponent<Light>().range = 2000f;
+            UWCharacter.Instance.playerCam.farClipPlane = 30000f;
+            TNovaTerrain.gameObject.SetActive(true);
+            TileMapRenderer.RenderTNovaMapTerrain(TNovaLevelModel.transform, lev_ark.data);
+        }
 
+        //Try and play sound file from a tnova res file
+        char[] sound_ark;
+        if (DataLoader.ReadStreamFile("C:\\Games\\Terra Nova\\CD\\Terra_Nova\\SPEECH\\RESBRK01.RES", out sound_ark))
+        {
+            DataLoader.Chunk voc_file;
+            if (!DataLoader.LoadChunk(sound_ark, 3308, out voc_file))
+            {
+                return;
+            }
+            VocLoader voc = new VocLoader(voc_file.data, "tnova");
+            MusicController.instance.Aud.clip = voc.Audio;
+            MusicController.instance.Aud.loop = true;
+            MusicController.instance.Aud.Play();
         }
     }
 
@@ -1910,35 +2032,42 @@ public class GameWorldController : UWEBase
         {//mobile info
             writer.WriteLine("\t\t<MobileProperties>");
             writer.WriteLine("\t\t\t<npc_hp>" + objList[o].npc_hp + "</npc_hp>");
-            writer.WriteLine("\t\t\t<ProjectileHeadingMinor>" + objList[o].ProjectileHeadingMinor + "</ProjectileHeadingMinor>");
-            writer.WriteLine("\t\t\t<ProjectileHeadingMajor>" + objList[o].ProjectileHeadingMajor + "</ProjectileHeadingMajor>");
-            writer.WriteLine("\t\t\t<MobileUnk01>" + objList[o].MobileUnk01 + "</MobileUnk01>");
+            writer.WriteLine("\t\t\t<ProjectileHeading>" + objList[o].ProjectileHeading + "</ProjectileHeading>");
+            writer.WriteLine("\t\t\t<MobileUnk_0xA>" + objList[o].MobileUnk_0xA + "</MobileUnk_0xA>");
+
             writer.WriteLine("\t\t\t<npc_goal>" + objList[o].npc_goal + "</npc_goal>");
             writer.WriteLine("\t\t\t<npc_gtarg>" + objList[o].npc_gtarg + "</npc_gtarg>");
-            writer.WriteLine("\t\t\t<MobileUnk02>" + objList[o].MobileUnk02 + "</MobileUnk02>");
+            writer.WriteLine("\t\t\t<MobileUnk_0xB_12_F>" + objList[o].MobileUnk_0xB_12_F + "</MobileUnk_0xB_12_F>");
+            int OriginX = (objList[o].MobileUnk_0xB_12_F <<12) | (objList[o].npc_gtarg<<4) | objList[o].npc_goal & 0xF;
+            writer.WriteLine("\t\t\t<CoOrdinateX>" + objList[o].CoordinateX + "</CoOrdinateX>");
+
             writer.WriteLine("\t\t\t<npc_level>" + objList[o].npc_level + "</npc_level>");
-            writer.WriteLine("\t\t\t<MobileUnk03>" + objList[o].MobileUnk03 + "</MobileUnk03>");
-            writer.WriteLine("\t\t\t<MobileUnk04>" + objList[o].MobileUnk04 + "</MobileUnk04>");
+            writer.WriteLine("\t\t\t<MobileUnk_0xD_4_FF>" + objList[o].MobileUnk_0xD_4_FF + "</MobileUnk_0xD_4_FF>");
+            writer.WriteLine("\t\t\t<MobileUnk_0xD_12_1>" + objList[o].MobileUnk_0xD_12_1 + "</MobileUnk_0xD_12_1>");
             writer.WriteLine("\t\t\t<npc_talkedto>" + objList[o].npc_talkedto + "</npc_talkedto>");
             writer.WriteLine("\t\t\t<npc_attitude>" + objList[o].npc_attitude + "</npc_attitude>");
-            writer.WriteLine("\t\t\t<MobileUnk05>" + objList[o].MobileUnk05 + "</MobileUnk05>");
+            //int val = (npc_attitude << 13) | (npc_talkedto << 12) | (MobileUnk_0xD_12_1 << 11) | (MobileUnk_0xD_4_FF << 4) | (npc_level & 0xF);
+            int OriginY = (objList[o].npc_attitude << 13) | (objList[o].npc_talkedto << 12) | (objList[o].MobileUnk_0xD_12_1 << 11) | (objList[o].MobileUnk_0xD_4_FF << 4) | (objList[o].npc_level & 0xF);
+            writer.WriteLine("\t\t\t<CoOrdinateY>" + OriginY + "</CoOrdinateY>");
+
+            writer.WriteLine("\t\t\t<MobileUnk_0xF_0_3F>" + objList[o].MobileUnk_0xF_0_3F + "</MobileUnk_0xF_0_3F>");
             writer.WriteLine("\t\t\t<npc_height>" + objList[o].npc_height + "</npc_height>");
-            writer.WriteLine("\t\t\t<MobileUnk06>" + objList[o].MobileUnk06 + "</MobileUnk06>");
-            writer.WriteLine("\t\t\t<MobileUnk07>" + objList[o].MobileUnk07 + "</MobileUnk07>");
-            writer.WriteLine("\t\t\t<MobileUnk08>" + objList[o].MobileUnk08 + "</MobileUnk08>");
-            writer.WriteLine("\t\t\t<MobileUnk09>" + objList[o].MobileUnk09 + "</MobileUnk09>");
+            writer.WriteLine("\t\t\t<MobileUnk_0xF_C_F>" + objList[o].MobileUnk_0xF_C_F + "</MobileUnk_0xF_C_F>");
+            writer.WriteLine("\t\t\t<MobileUnk_0x11>" + objList[o].MobileUnk_0x11 + "</MobileUnk_0x11>");
+            writer.WriteLine("\t\t\t<ProjectileSourceID>" + objList[o].ProjectileSourceID + "</ProjectileSourceID>");
+            writer.WriteLine("\t\t\t<MobileUnk_0x13>" + objList[o].MobileUnk_0x13 + "</MobileUnk_0x13>");
             writer.WriteLine("\t\t\t<Projectile_Speed>" + objList[o].Projectile_Speed + "</Projectile_Speed>");
             writer.WriteLine("\t\t\t<Projectile_Pitch>" + objList[o].Projectile_Pitch + "</Projectile_Pitch>");
-            writer.WriteLine("\t\t\t<Projectile_Sign>" + objList[o].Projectile_Sign + "</Projectile_Sign>");
+            //writer.WriteLine("\t\t\t<Projectile_Sign>" + objList[o].Projectile_Sign + "</Projectile_Sign>");
             writer.WriteLine("\t\t\t<npc_voidanim>" + objList[o].npc_voidanim + "</npc_voidanim>");
-            writer.WriteLine("\t\t\t<MobileUnk11>" + objList[o].MobileUnk11 + "</MobileUnk11>");
-            writer.WriteLine("\t\t\t<MobileUnk12>" + objList[o].MobileUnk12 + "</MobileUnk12>");
+            writer.WriteLine("\t\t\t<MobileUnk_0x15_4_1F>" + objList[o].MobileUnk_0x15_4_1F + "</MobileUnk_0x15_4_1F>");
+            writer.WriteLine("\t\t\t<MobileUnk_0x16_0_F>" + objList[o].MobileUnk_0x16_0_F + "</MobileUnk_0x16_0_F>");
             writer.WriteLine("\t\t\t<npc_yhome>" + objList[o].npc_yhome + "</npc_yhome>");
             writer.WriteLine("\t\t\t<npc_xhome>" + objList[o].npc_xhome + "</npc_xhome>");
             writer.WriteLine("\t\t\t<npc_heading>" + objList[o].npc_heading + "</npc_heading>");
-            writer.WriteLine("\t\t\t<MobileUnk13>" + objList[o].MobileUnk13 + "</MobileUnk13>");
+            writer.WriteLine("\t\t\t<MobileUnk_0x18_5_7>" + objList[o].MobileUnk_0x18_5_7 + "</MobileUnk_0x18_5_7>");
             writer.WriteLine("\t\t\t<npc_hunger>" + objList[o].npc_hunger + "</npc_hunger>");
-            writer.WriteLine("\t\t\t<MobileUnk14>" + objList[o].MobileUnk14 + "</MobileUnk14>");
+            writer.WriteLine("\t\t\t<MobileUnk_0x19_6_3>" + objList[o].MobileUnk_0x19_6_3 + "</MobileUnk_0x19_6_3>");
             writer.WriteLine("\t\t\t<npc_whoami>" + objList[o].npc_whoami + "</npc_whoami>");
             writer.WriteLine("\t\t</MobileProperties>");
         }

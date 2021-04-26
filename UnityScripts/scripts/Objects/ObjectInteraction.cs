@@ -8,6 +8,8 @@ using UnityEngine.UI;
 /// </summary>
 public class ObjectInteraction : UWEBase{
 
+    public static long LinkEventCtr = 0;
+
     public static bool PlaySoundEffects = true;
 
     public const int NPC_TYPE = 0;
@@ -147,6 +149,7 @@ public class ObjectInteraction : UWEBase{
     public const int A_BRIDGE_TRAP = 133;
     public const int A_DJINN_BOTTLE = 134;
     public const int A_SPLASH = 135;
+    public const int A_CANDLE = 136;
 
     /*SYSTEM SHOCK TRIGGER TYPES. I'm adding 1000 to keep them seperate from the above*/
     public const int SHOCK_TRIGGER_ENTRY = 1000;    //Player enters trigger's tile
@@ -201,75 +204,289 @@ public class ObjectInteraction : UWEBase{
     public const int HEADINGNORTHWEST = 135;
     public const int HEADINGSOUTHWEST = 45;
 
+    public int ObjectIndex
+    {
+        get
+        {
+            return BaseObjectData.index;
+        }
+    }
+
     //UW Props
 
-    [Header("UW Static Properties")]
-    public int item_id; //0-8
-    public short flags; //9-12
-    public short enchantment;   //12
-    public short doordir;   //13
-    public short invis;     //14
-    public short isquant;   //15
+    //[Header("UW Static Properties")]
+    public int item_id //0-8
+    {
+        get { return BaseObjectData.item_id;   }
+        set { BaseObjectData.item_id = value;  }
+    }
 
-    public short zpos;    //  0- 6   7   "zpos"      Object Z position (0-127)
-    public short heading;   //        7- 9   3   "heading"   Heading (*45 deg)
-    public short xpos; //   10-12   3   "ypos"      Object Y position (0-7)
-    public short ypos; //  13-15   3   "xpos"      Object X position (0-7)
-                    //0004 quality / chain
-    public short quality;   //;     0- 5   6   "quality"   Quality
-    public int next; //    6-15   10  "next"      Index of next object in chain
-                     //0006 link / special
-                     //     0- 5   6   "owner"     Owner / special
-    public short owner; //Also special
-                        //     6-15   10  (*)         Quantity / special link / special property
-    public int link;    //also quantity
+
+    public short flags//; //9-11
+    {
+        get { return BaseObjectData.flags; }
+        set { BaseObjectData.flags = value; }
+    }
+
+    public short enchantment  //12
+    {
+        get { return BaseObjectData.enchantment;   }
+        set { BaseObjectData.enchantment = value;  }
+    }
+
+    public short doordir   //13index
+    {
+        get { return BaseObjectData.doordir; }
+        set { BaseObjectData.doordir = value; }
+    }
+
+    public short invis     //14
+    {
+        get { return BaseObjectData.invis; }
+        set { BaseObjectData.invis = value; }
+    }
+
+
+    public short isquant   //15
+    {
+        get { return BaseObjectData.is_quant; }
+        set { BaseObjectData.is_quant = value; }
+    }
+
+    public short zpos //;    //  0- 6   7   "zpos"      Object Z position (0-127)
+    {
+        get { return BaseObjectData.zpos; }
+        set { BaseObjectData.zpos = value; }
+    }
+
+    public short heading//;   //        7- 9   3   "heading"   Heading (*45 deg)
+    {
+        get { return BaseObjectData.heading; }
+        set { BaseObjectData.heading = value; }
+    }
+
+    public short xpos//; //   10-12   3   "ypos"      Object Y position (0-7)
+    {
+        get { return BaseObjectData.xpos; }
+        set { BaseObjectData.xpos = value; }
+    }
+
+
+    public short ypos//; //  13-15   3   "xpos"      Object X position (0-7)
+    {
+        get { return BaseObjectData.ypos; }
+        set { BaseObjectData.ypos = value; }
+    }
+
+
+    //0004 quality / chain
+    public short quality//;   //;     0- 5   6   "quality"   Quality
+    {
+        get { return BaseObjectData.quality; }
+        set { BaseObjectData.quality = value; }
+    }
+
+    public int next//; //    6-15   10  "next"      Index of next object in chain
+    {
+        get { return BaseObjectData.next; }
+        set { BaseObjectData.next = value; }
+    }
+
+    //0006 link / special
+    //     0- 5   6   "owner"     Owner / special
+    public short owner//; //Also special
+                      //     6-15   10  (*)         Quantity / special link / special property
+    {
+        get { return BaseObjectData.owner; }
+        set { BaseObjectData.owner = value; }
+    }
+    public int link//;    //also quantity
+    {
+        get { return BaseObjectData.link; }
+        set { BaseObjectData.link = value; }
+    }
 
 
     //Mobile object information.
     //Moved here to properly support objects that are in motion.
-    [Header("UW Mobile Properties")]
-    public short npc_whoami;
-    public short npc_voidanim;
-    public short npc_xhome;        //  x coord of home tile
-    public short npc_yhome;        //  y coord of home tile
-    public short npc_hunger;
+   // [Header("UW Mobile Properties")]
+    public short npc_whoami
+    {
+        get { return BaseObjectData.npc_whoami; }
+        set { BaseObjectData.npc_whoami = value; }
+    }
+
+    public short npc_voidanim
+    {
+        get { return BaseObjectData.npc_voidanim; }
+        set { BaseObjectData.npc_voidanim = value; }
+    }
+    public short npc_xhome        //  x coord of home tile
+    {
+        get { return BaseObjectData.npc_xhome; }
+        set { BaseObjectData.npc_xhome = value; }
+    }
+    public short npc_yhome        //  y coord of home tile
+    {
+        get { return BaseObjectData.npc_yhome; }
+        set { BaseObjectData.npc_yhome = value; }
+    }
+    public short npc_hunger
+    {
+        get { return BaseObjectData.npc_hunger; }
+        set { BaseObjectData.npc_hunger = value; }
+    }
     public short npc_health;
-    public short npc_hp;
+    public short npc_hp
+    {
+        get { return BaseObjectData.npc_hp; }
+        set { BaseObjectData.npc_hp = value; }
+    }
     public short npc_arms;          // (not used in uw1)
     public short npc_power;
-    public short npc_goal;          // goal that NPC has; 5:kill player 6:? 9:?
-    public short npc_attitude;       //attitude; 0:hostile, 1:upset, 2:mellow, 3:friendly
-    public short npc_gtarg;         //goal target; 1:player
-    public short npc_heading;
-    public short npc_talkedto;      // is 1 when player already talked to npc
-    public short npc_level;
+    public short npc_goal          // goal that NPC has; 5:kill player 6:? 9:?
+    {
+        get { return BaseObjectData.npc_goal; }
+        set { BaseObjectData.npc_goal= value; }
+    }
+
+    public short npc_attitude       //attitude; 0:hostile, 1:upset, 2:mellow, 3:friendly
+    {
+        get { return BaseObjectData.npc_attitude; }
+        set { BaseObjectData.npc_attitude = value; }
+    }
+
+    public short npc_gtarg         //goal target; 1:player
+    {
+        get { return BaseObjectData.npc_gtarg; }
+        set { BaseObjectData.npc_gtarg = value; }
+    }
+
+    public short npc_heading
+    {
+        get { return BaseObjectData.npc_heading; }
+        set { BaseObjectData.npc_heading = value; }
+    }
+
+    public short npc_talkedto      // is 1 when player already talked to npc
+    {
+        get { return BaseObjectData.npc_talkedto; }
+        set { BaseObjectData.npc_talkedto = value; }
+    }
+
+    public short npc_level
+    {
+        get { return BaseObjectData.npc_level; }
+        set { BaseObjectData.npc_level = value; }
+    }
     public short npc_name;       //    (not used in uw1)
     public short npc_height;
 
     //Unknown/research
-    public short MobileUnk01;
-    public short MobileUnk02;
-    public short MobileUnk03;
-    public short MobileUnk04;
-    public short MobileUnk05;
-    public short MobileUnk06;
-    public short MobileUnk07;
-    public short MobileUnk08;
-    public short MobileUnk09;
-    public short MobileUnk11;
-    public short MobileUnk12;
-    public short MobileUnk13;
-    public short MobileUnk14;
+    public short MobileUnk_0xA
+    {
+        get { return BaseObjectData.MobileUnk_0xA; }
+        set { BaseObjectData.MobileUnk_0xA = value; }
+    }
+
+    public short MobileUnk_0xB_12_F
+    {
+        get { return BaseObjectData.MobileUnk_0xB_12_F; }
+        set { BaseObjectData.MobileUnk_0xB_12_F = value; }
+    }
+
+    public short MobileUnk_0xD_4_FF
+    {
+        get { return BaseObjectData.MobileUnk_0xD_4_FF; }
+        set { BaseObjectData.MobileUnk_0xD_4_FF = value; }
+    }
+    public short MobileUnk_0xD_12_1
+    {
+        get { return BaseObjectData.MobileUnk_0xD_12_1; }
+        set { BaseObjectData.MobileUnk_0xD_12_1 = value; }
+    }
+
+    /// <summary>
+    /// Flag for wether or not the game considers the npc powerful. Used in Study monster.
+    /// </summary>
+    public short NPC_PowerFlag
+    {
+        get { return BaseObjectData.NPC_PowerFlag; }
+    }
+    public short MobileUnk_0xF_0_3F
+    {
+        get { return BaseObjectData.MobileUnk_0xF_0_3F; }
+        set { BaseObjectData.MobileUnk_0xF_0_3F = value; }
+    }
+    public short MobileUnk_0xF_C_F
+    {
+        get { return BaseObjectData.MobileUnk_0xF_C_F; }
+        set { BaseObjectData.MobileUnk_0xF_C_F = value; }
+    }
+    public short MobileUnk_0x11
+    {
+        get { return BaseObjectData.MobileUnk_0x11; }
+        set { BaseObjectData.MobileUnk_0x11 = value; }
+    }
+    public short ProjectileSourceID
+    {
+        get { return BaseObjectData.ProjectileSourceID; }
+        set { BaseObjectData.ProjectileSourceID = value; }
+    }
+    public short MobileUnk_0x13
+    {
+        get { return BaseObjectData.MobileUnk_0x13; }
+        set { BaseObjectData.MobileUnk_0x13 = value; }
+    }
+    public short MobileUnk_0x15_4_1F
+    {
+        get { return BaseObjectData.MobileUnk_0x15_4_1F; }
+        set { BaseObjectData.MobileUnk_0x15_4_1F = value; }
+    }
+
+    public short MobileUnk_0x16_0_F
+    {
+        get { return BaseObjectData.MobileUnk_0x16_0_F; }
+        set { BaseObjectData.MobileUnk_0x16_0_F = value; }
+    }
+    public short MobileUnk_0x18_5_7
+    {
+        get { return BaseObjectData.MobileUnk_0x18_5_7; }
+        set { BaseObjectData.MobileUnk_0x18_5_7 = value; }
+    }
+
+    public short MobileUnk_0x19_6_3
+    {
+        get { return BaseObjectData.MobileUnk_0x19_6_3; }
+        set { BaseObjectData.MobileUnk_0x19_6_3 = value; }
+    }
 
     //Projectiles are stored in the mobile object area.
     //The following properties are currently known
-    [Header("Projectile")]
-    public short ProjectileHeadingMajor;
-    public short ProjectileHeadingMinor;
-    public short Projectile_Speed;
-    public short Projectile_Pitch;
-    public short Projectile_Sign;
 
+    public short ProjectileHeading
+    {
+        get { return BaseObjectData.ProjectileHeading; }
+        set { BaseObjectData.ProjectileHeading = value; }
+    }
+    //public short ProjectileHeadingMinor
+    //{
+    //    get { return objectloaderinfo.ProjectileHeadingMinor; }
+    //    set { objectloaderinfo.ProjectileHeadingMinor = value; }
+    //}
+    
+    public short Projectile_Speed
+    {
+        get { return BaseObjectData.Projectile_Speed; }
+        set { BaseObjectData.Projectile_Speed = value; }
+    }
+    public short Projectile_Pitch
+    {
+        get { return BaseObjectData.Projectile_Pitch; }
+        set { BaseObjectData.Projectile_Pitch = value; }
+    }
+    // public short Projectile_Sign;
+    //[Header("Projectile")]
     [Header("Display Settings")]
     /// <summary>
     /// The sprite index number to use when displaying this object in the game world.
@@ -292,12 +509,6 @@ public class ObjectInteraction : UWEBase{
     public bool animationStarted;
 
 
-    
-    /// <summary>
-    /// Indicates if the object can be used.
-    /// </summary>
-    //public bool CanBeUsed;
-
     /// <summary>
     /// Tells if object is in the inventory or in the open world in case there is different behaviours needed depending on the case.
     /// </summary>
@@ -317,7 +528,7 @@ public class ObjectInteraction : UWEBase{
     /// The inventory slot that the object is in.
     /// </summary>
     public short inventorySlot = -1;
-    //	public short InUseFlag;
+
 
     [Header("Positioning")]
     public short ObjectTileX; //Position of the object on the tilemap
@@ -332,7 +543,6 @@ public class ObjectInteraction : UWEBase{
     public AudioSource aud;//Audio Source for common sounds.
     public Rigidbody rg;
 
-
     public enum IdentificationFlags
     {
         Unidentified = 0,
@@ -340,7 +550,12 @@ public class ObjectInteraction : UWEBase{
         Identified = 2
     };
 
-    public ObjectLoaderInfo objectloaderinfo;
+    /// <summary>
+    /// Reference to the object and the data files they are stored in.
+    /// </summary>
+    public ObjectLoaderInfo BaseObjectData;
+
+    public long FileDataAddress;
 
     void Start()
     {
@@ -350,193 +565,124 @@ public class ObjectInteraction : UWEBase{
         {
             ObjectSprite.gameObject.SetActive(invis == 0);
         }
+        if ((ObjectTileX > 64) || (ObjectTileY > 64))
+        {
+            FreezeMovement(this.gameObject);
+        }
 
+        FileDataAddress = BaseObjectData.address;
     }
 
     void Update()
     {
-        //if ((animationStarted==false) && (ignoreSprite==false) && (invis==0))
         if ((animationStarted == false) && (UseSprite() == false) && (invis == 0))
         {
             UpdateAnimation();
         }
-        //if (objectloaderinfo != null)
-        //{
-        //    debugindex = objectloaderinfo.index;
-        //}
-       // else
-        //{
-        //    debugindex = -1;
-       // }
 
-
-        //if (this.transform.parent==GameWorldController.instance.DynamicObjectMarker())
-        //{
-
-        /*					if (PickedUp==false)
-                            {
-                                    short currTileX=tileX;
-                                    short currTileY=tileY;	
-                                    UpdatePosition();
-                                    if ((currTileX!=tileX) || (currTileY!=tileY))
-                                    {
-                                        UpdateLinkedList(this, currTileX, currTileY, tileX, tileY);
-                                    }	
-                            }*/
-
-        //}
-
+        if (!BaseObjectData.IsInventory)
+        {
+            UpdatePosition();
+        }
     }
+     
 
-    ///// <summary>
-    ///// Updates the linked list as objects move.
-    ///// </summary>
-    ///// <param name="obj">Object.</param>
-    ///// <param name="oldTileX">Old tile x.</param>
-    ///// <param name="oldTileY">Old tile y.</param>
-    ///// <param name="newTileX">New tile x.</param>
-    ///// <param name="newTileY">New tile y.</param>
-    //public static void UpdateLinkedList(ObjectInteraction obj, int oldTileX, int oldTileY, int newTileX, int newTileY)
+    //public static void MoveToLinkedListChain(ObjectInteraction obj, TileInfo tNew)
     //{
-    //    return;
-    //    bool MovingFromValidTile = TileMap.ValidTile(oldTileX, oldTileY);
-    //    bool MovingToValidTile = TileMap.ValidTile(newTileX, newTileY);
-
-    //    if (MovingFromValidTile && MovingToValidTile)
+    //    if (tNew.indexObjectList == 0)
     //    {
-    //        Debug.Log("Object traversing " + obj.name + "Tiles(" + oldTileX + "," + oldTileY + ") to (" + newTileX + "," + newTileY + ")");
-    //        TileInfo tOld = CurrentTileMap().Tiles[oldTileX, oldTileY];
-    //        TileInfo tNew = CurrentTileMap().Tiles[newTileX, newTileY];
-    //        MoveFromLinkedListChain(obj, tOld);
-    //        MoveToLinkedListChain(obj, tNew);
-    //        return;
+    //        tNew.indexObjectList = obj.objectloaderinfo.index;
+    //        Debug.Log("Putting " + obj.name + " at head of tile (" + tNew.tileX + "," + tNew.tileY + ")");
     //    }
-
-    //    if (!MovingToValidTile && MovingFromValidTile)
-    //    {//Object is probably moving off map.
-    //        Debug.Log("Object moving off map " + obj.name + "Tiles(" + oldTileX + "," + oldTileY + ") to (" + newTileX + "," + newTileY + ")");
-    //        TileInfo tOld = CurrentTileMap().Tiles[oldTileX, oldTileY];
-    //        MoveFromLinkedListChain(obj, tOld);
-    //        obj.next = 0;
-    //        return;
-    //    }
-
-    //    if (MovingToValidTile && !MovingFromValidTile)
-    //    {//Object moving from inv to world
-    //        Debug.Log("Object moving on map " + obj.name + "Tiles(" + oldTileX + "," + oldTileY + ") to (" + newTileX + "," + newTileY + ")");
-    //        TileInfo tNew = CurrentTileMap().Tiles[newTileX, newTileY];
-    //        MoveToLinkedListChain(obj, tNew);
-    //        return;
-    //    }
-    //    //This should probably not happen.
-    //    if (
-    //            ((newTileX == 99) && (newTileY == 99) && (oldTileX == -1) && (oldTileY == -1))//load game player inventory
-    //            ||
-    //            ((newTileX == 99) && (newTileY == 99) && (oldTileX == 99) && (oldTileY == 99))//Moving from offmap to inventory.
-    //    )
-
+    //    else
     //    {
-    //        return;
+    //        //Traverse the object list to it's end and add the object to the last obj
+    //        int index = tNew.indexObjectList;
+    //        int breaker = 0;
+    //        while ((index != 0) && (breaker <= 1024))
+    //        {
+    //            ObjectInteraction objChain = ObjectLoader.getObjectIntAt(index);
+    //            if (objChain != null)
+    //            {
+    //                if (objChain.objectloaderinfo.index != obj.objectloaderinfo.index)
+    //                {
+    //                    if (objChain.next == 0)
+    //                    {
+    //                        //End of chai												
+    //                        Debug.Log("Chaining " + obj.name + " to " + objChain.name);
+    //                        objChain.next = obj.objectloaderinfo.index;
+    //                        index = 0;
+    //                    }
+    //                    else
+    //                    {
+    //                        //Find next obj
+    //                        index = objChain.next;
+    //                    }
+    //                }
+    //                else
+    //                {//Obj is already in this chain. No action needed.
+    //                    Debug.Log("object already in chain");
+    //                    index = 0;
+    //                }
+
+    //            }
+    //            else
+    //            {
+    //                Debug.Log("Null object in chain");
+    //                index = 0;
+    //            }
+    //            breaker++;
+    //        }
+    //        if (breaker >= 1024)
+    //        {
+    //            Debug.Log("This chain looped " + breaker + " times" + obj.name);
+    //        }
     //    }
-    //    Debug.Log("Object moving to/from invalid tile " + obj.name + "Tiles(" + oldTileX + "," + oldTileY + ") to (" + newTileX + "," + newTileY + ")");
     //}
 
-    public static void MoveToLinkedListChain(ObjectInteraction obj, TileInfo tNew)
-    {
-        if (tNew.indexObjectList == 0)
-        {
-            tNew.indexObjectList = obj.objectloaderinfo.index;
-            Debug.Log("Putting " + obj.name + " at head of tile (" + tNew.tileX + "," + tNew.tileY + ")");
-        }
-        else
-        {
-            //Traverse the object list to it's end and add the object to the last obj
-            int index = tNew.indexObjectList;
-            int breaker = 0;
-            while ((index != 0) && (breaker <= 1024))
-            {
-                ObjectInteraction objChain = ObjectLoader.getObjectIntAt(index);
-                if (objChain != null)
-                {
-                    if (objChain.objectloaderinfo.index != obj.objectloaderinfo.index)
-                    {
-                        if (objChain.next == 0)
-                        {
-                            //End of chai												
-                            Debug.Log("Chaining " + obj.name + " to " + objChain.name);
-                            objChain.next = obj.objectloaderinfo.index;
-                            index = 0;
-                        }
-                        else
-                        {
-                            //Find next obj
-                            index = objChain.next;
-                        }
-                    }
-                    else
-                    {//Obj is already in this chain. No action needed.
-                        Debug.Log("object already in chain");
-                        index = 0;
-                    }
+    //static void MoveFromLinkedListChain(ObjectInteraction obj, TileInfo tOld)
+    //{
+    //    if (tOld.indexObjectList == obj.objectloaderinfo.index)
+    //    {
+    //        //Remove from the head of it's previous list
+    //        tOld.indexObjectList = obj.next;
+    //        Debug.Log("Removing " + obj.name + " at head of tile (" + tOld.tileX + "," + tOld.tileY + ")");
+    //    }
+    //    else
+    //    {
+    //        int breaker = 0;
+    //        int index = tOld.indexObjectList;
+    //        while ((index != 0) && (breaker <= 1024))
+    //        {
+    //            ObjectInteraction objChain = ObjectLoader.getObjectIntAt(index);
+    //            if (objChain.next == obj.objectloaderinfo.index)
+    //            {
+    //                //Found the object that links to this object. Set it's next to the that of the moving object
+    //                Debug.Log("DeChaining " + obj.name + " from " + objChain.name);
+    //                objChain.next = obj.next;
+    //                index = 0;
+    //            }
+    //            else
+    //            {
+    //                if (index != objChain.next)
+    //                {
+    //                    index = objChain.next;
+    //                }
+    //                else
+    //                {
+    //                    Debug.Log("possibly looping chaing");
+    //                    index = 0;
+    //                }
 
-                }
-                else
-                {
-                    Debug.Log("Null object in chain");
-                    index = 0;
-                }
-                breaker++;
-            }
-            if (breaker >= 1024)
-            {
-                Debug.Log("This chain looped " + breaker + " times" + obj.name);
-            }
-        }
-    }
-
-    static void MoveFromLinkedListChain(ObjectInteraction obj, TileInfo tOld)
-    {
-        if (tOld.indexObjectList == obj.objectloaderinfo.index)
-        {
-            //Remove from the head of it's previous list
-            tOld.indexObjectList = obj.next;
-            Debug.Log("Removing " + obj.name + " at head of tile (" + tOld.tileX + "," + tOld.tileY + ")");
-        }
-        else
-        {
-            int breaker = 0;
-            int index = tOld.indexObjectList;
-            while ((index != 0) && (breaker <= 1024))
-            {
-                ObjectInteraction objChain = ObjectLoader.getObjectIntAt(index);
-                if (objChain.next == obj.objectloaderinfo.index)
-                {
-                    //Found the object that links to this object. Set it's next to the that of the moving object
-                    Debug.Log("DeChaining " + obj.name + " from " + objChain.name);
-                    objChain.next = obj.next;
-                    index = 0;
-                }
-                else
-                {
-                    if (index != objChain.next)
-                    {
-                        index = objChain.next;
-                    }
-                    else
-                    {
-                        Debug.Log("possibly looping chaing");
-                        index = 0;
-                    }
-
-                }
-                breaker++;
-            }
-            if (breaker >= 1024)
-            {
-                Debug.Log("This chain looped " + breaker + " times (MoveFromLinkedListChain)");
-            }
-        }
-    }
+    //            }
+    //            breaker++;
+    //        }
+    //        if (breaker >= 1024)
+    //        {
+    //            Debug.Log("This chain looped " + breaker + " times (MoveFromLinkedListChain)");
+    //        }
+    //    }
+    //}
 
     public void UpdateAnimation()
     {
@@ -567,21 +713,13 @@ public class ObjectInteraction : UWEBase{
 
     public Sprite GetInventoryDisplay()
     {
-        //return tc.RequestSprite(InvDisplayIndex,isAnimated);
         return GameWorldController.instance.ObjectArt.RequestSprite(InvDisplayIndex);
     }
 
     public Sprite GetEquipDisplay()
     {
         return this.GetComponent<object_base>().GetEquipDisplay();
-        //return GameWorldController.instance.ObjectArt.RequestSprite(InvDisplayIndex);
-        //return  tc.RequestSprite(GetEquipString());
     }
-
-    /*public string GetEquipString()
-    {
-        return this.GetComponent<object_base>().getEquipString();
-    }*/
 
     public Sprite GetWorldDisplay()
     {
@@ -725,6 +863,19 @@ public class ObjectInteraction : UWEBase{
         if (item != null)
         {
             return item.use();
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public bool Eat()
+    {
+        object_base item = this.GetComponent<object_base>();//Base object class
+        if (item != null)
+        {
+            return item.Eat();
         }
         else
         {
@@ -955,31 +1106,16 @@ public class ObjectInteraction : UWEBase{
                     InputObject2.consumeObject();
                 }
 
-                ObjectLoaderInfo newobjt = ObjectLoader.newObject(lstOutput[i], 40, 0, 0, 256);
+                ObjectLoaderInfo newobjt = ObjectLoader.newWorldObject(lstOutput[i], 40, 0, 0, 256);
                 ObjectInteraction Created = ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance.InventoryMarker.gameObject, GameWorldController.instance.InventoryMarker.transform.position);
                 GameWorldController.MoveToInventory(Created);
                 UWCharacter.InteractionMode = UWCharacter.InteractionModePickup;
-                //if (Created != null)
-                //{
+
                     Created.UpdateAnimation();
-                    //FIELD PICKUP Created.GetComponent<ObjectInteraction>().PickedUp = true;
-                    //UWHUD.instance.CursorIcon = Created.GetComponent<ObjectInteraction>().GetInventoryDisplay().texture;
-                //}
+
                 InteractionModeControl.UpdateNow = true;
                 return Created;
-
-                /*
-    ObjectInteraction CreatedObjectInt = CreateNewObject (lstOutput[i]);
-    if (CreatedObjectInt != null) {
-            CreatedObjectInt.UpdateAnimation ();
-            CreatedObjectInt.PickedUp=true;
-            UWHUD.instance.CursorIcon = CreatedObjectInt.GetInventoryDisplay ().texture;
-    }
-    UWCharacter.InteractionMode=UWCharacter.InteractionModePickup;
-    InteractionModeControl.UpdateNow=true;
-    return CreatedObjectInt.gameObject;
-    */
-            }
+                            }
         }
 
         return null;
@@ -990,7 +1126,7 @@ public class ObjectInteraction : UWEBase{
     /// </summary>
     public void consumeObject()
     {
-        if ((isQuant == false) || ((isQuant) && (link == 1)) || (isEnchanted))
+        if ((isQuantityBln == false) || ((isQuantityBln) && (link == 1)) || (isEnchanted))
         {//the last of the item or is not a quantity;
             this.GetComponent<object_base>().DestroyEvent();
             Container cn = UWCharacter.Instance.playerInventory.currentContainer;
@@ -1002,11 +1138,12 @@ public class ObjectInteraction : UWEBase{
             if (CurrentObjectInHand == this)
             {
                 CurrentObjectInHand = null;//Make sure there is not instance of this object in the players hand	
-               // UWHUD.instance.CursorIcon = UWHUD.instance.CursorIconDefault;
             }
             UWCharacter.Instance.playerInventory.Refresh();
-            objectloaderinfo.InUseFlag = 0;//Free up the slot
-            Destroy(this.gameObject);
+            BaseObjectData.InUseFlag = 0;//Free up the slot
+
+            // Destroy(this.gameObject);
+            ObjectInteraction.DestroyObjectFromUW(this);
         }
         else
         {//just decrement the quantity value;
@@ -1080,7 +1217,7 @@ public class ObjectInteraction : UWEBase{
         }
         else
         {
-            if (isQuant == true)
+            if (isQuantityBln == true)
             {
                 return link;
             }
@@ -1154,18 +1291,11 @@ public class ObjectInteraction : UWEBase{
     private static ObjectInteraction CreateObjectInteraction(
             GameObject myObj, float DimX, float DimY, float DimZ,
             ObjectLoaderInfo currObj
-          //int Worldindex, int InventoryIndex, int EquipIndex, int ItemType, 
-          // int ItemId, int link, int Quality, int Owner, 
-          //int isMoveable, int isUsable, int isAnimated, int useSprite, 
-          //  int isQuant, int isEnchanted, int flags, int inUseFlag
           )
     {
         ObjectInteraction objInteract = myObj.AddComponent<ObjectInteraction>();
-        // ObjectMasters.ObjectProperties ObjectMasterProperties = GameWorldController.instance.objectMaster.objProp[currobj.ItemId];
-
+        objInteract.BaseObjectData = currObj;
         BoxCollider box = myObj.GetComponent<BoxCollider>();
-
-
         if (
                 (box == null)
                 && (objInteract.GetItemType() != ObjectInteraction.NPC_TYPE)
@@ -1184,17 +1314,11 @@ public class ObjectInteraction : UWEBase{
 
         objInteract.WorldDisplayIndex = objInteract.WorldIndex();// int.Parse(WorldString.Substring (WorldString.Length-3,3));
         objInteract.InvDisplayIndex = objInteract.InventoryIndex();//int.Parse (InventoryString.Substring (InventoryString.Length-3,3));
-
-        //if (isUsable())
-        //{
-        //	objInteract.CanBeUsed=true;
-        //}
-
-        objInteract.item_id = currObj.item_id;//Internal ItemID
-        objInteract.link = currObj.link;
-        objInteract.quality = (short)currObj.quality;
-        objInteract.owner = (short)currObj.owner;
-        objInteract.flags = (short)currObj.flags;
+        //objInteract.item_id = currObj.item_id;//Internal ItemID
+       // objInteract.link = currObj.link;
+        //objInteract.quality = (short)currObj.quality;
+        //objInteract.owner = (short)currObj.owner;
+       // objInteract.flags = (short)currObj.flags;
 
         objInteract.InvDisplayIndex = GameWorldController.instance.objectMaster.objProp[currObj.item_id].InventoryIndex;
         objInteract.WorldDisplayIndex = GameWorldController.instance.objectMaster.objProp[currObj.item_id].WorldIndex;
@@ -1207,41 +1331,9 @@ public class ObjectInteraction : UWEBase{
             objInteract.rg.angularDrag = 0.0f;
             FreezeMovement(myObj);
         }
-
-        /*   if (objInteract.GetItemType() != ObjectInteraction.ANIMATION)
-           {
-              /* if (isAnimated == 1)
-               {
-                   objInteract.isAnimated = true;
-               }*/
-
-        /*    if (objInteract.UseSprite())
-            {
-                objInteract.ignoreSprite = false;
-            }
-            else
-            {
-                objInteract.ignoreSprite = true;
-            }
-        }
-        else
-        {
-            objInteract.ignoreSprite = true;
-        }*/
-        objInteract.isquant = (short)currObj.is_quant;
-        //if (isQuant==1)
-        //{
-        //	objInteract.isquant=1;
-        //}
-        //else
-        //{
-        //	objInteract.isquant=0;
-        //}
-        //if (isEnchanted==1)
-        //{
-        objInteract.enchantment = (short)currObj.enchantment;
-        //Debug.Log (myObj.name + " is enchanted. Take a look at it please.");
-        //}
+        
+      //  objInteract.isquant = (short)currObj.is_quant;
+        //objInteract.enchantment = (short)currObj.enchantment;
 
         if ((PlaySoundEffects) && (!ObjectLoader.isTrap(currObj) && (!ObjectLoader.isTrigger(currObj))))
         {
@@ -1281,7 +1373,7 @@ public class ObjectInteraction : UWEBase{
     /// <returns><c>true</c> if this instance is stackable; otherwise, <c>false</c>.</returns>
     public bool IsStackable()
     {//An object is stackable if it has the isQuant flag and is not enchanted.
-        return ((isQuant) && (!isEnchanted));
+        return ((isQuantityBln) && (!isEnchanted));
     }
 
     /// <summary>
@@ -1332,7 +1424,7 @@ public class ObjectInteraction : UWEBase{
         mergingInto.link += mergingFrom.link;
         mergingInto.isquant = 1;
         mergingInto.GetComponent<object_base>().MergeEvent();
-        mergingFrom.objectloaderinfo.InUseFlag = 0;
+        mergingFrom.BaseObjectData.InUseFlag = 0;
         Destroy(mergingFrom.gameObject);
     }
 
@@ -1406,15 +1498,9 @@ public class ObjectInteraction : UWEBase{
         }
 
         mysprite.material = Resources.Load<Material>("Materials/SpriteShader");
-
-        //CharacterController cap
-        //cap = myObj.GetComponent<CharacterController>();
         npc.CharController = myObj.AddComponent<CharacterController>();
-        //SetUndeadNPCS(objInt, npc);
         SetNPCSizes(objInt, npc, NpcLauncher);
         npc.CharController.stepOffset = 0.1f;//Stop npcs from climbing over each other
-        //SetMagicAttackNPCs(objInt, npc);
-        //SetRangeAttackNPCs(objInt, npc);
         return npc;
     }
 
@@ -1686,42 +1772,43 @@ public class ObjectInteraction : UWEBase{
     /// <param name="objI">Object i.</param>
     public static void SetMobileProps(GameObject myObj, ObjectInteraction objInt, ObjectLoaderInfo objI)
     {
-        objInt.npc_whoami = objI.npc_whoami;
-        objInt.npc_voidanim = objI.npc_voidanim;
-        objInt.npc_xhome = objI.npc_xhome;        //  x coord of home tile
-        objInt.npc_yhome = objI.npc_yhome;        //  y coord of home tile
-        objInt.npc_hunger = objI.npc_hunger;
-        objInt.npc_health = objI.npc_health;
-        objInt.npc_hp = objI.npc_hp;
-        objInt.npc_arms = objI.npc_arms;          // (not used in uw1)
-        objInt.npc_power = objI.npc_power;
-        objInt.npc_goal = objI.npc_goal;          // goal that NPC has; 5:kill player 6:? 9:?
-        objInt.npc_attitude = objI.npc_attitude;       //attitude; 0:hostile, 1:upset, 2:mellow, 3:friendly
-        objInt.npc_gtarg = objI.npc_gtarg;         //goal target; 1:player
-        objInt.npc_talkedto = objI.npc_talkedto;      // is 1 when player already talked to npc
-        objInt.npc_level = objI.npc_level;
-        objInt.npc_name = objI.npc_name;       //    (not used in uw1)
-        objInt.npc_heading = objI.npc_heading;
-        objInt.Projectile_Speed = objI.Projectile_Speed;
-        objInt.Projectile_Pitch = objI.Projectile_Pitch;
-        objInt.ProjectileHeadingMinor = objI.ProjectileHeadingMinor;
-        objInt.npc_height = objI.npc_height;
+        return;
+        ////////objInt.npc_whoami = objI.npc_whoami;
+        ////////objInt.npc_voidanim = objI.npc_voidanim;
+        ////////objInt.npc_xhome = objI.npc_xhome;        //  x coord of home tile
+        ////////objInt.npc_yhome = objI.npc_yhome;        //  y coord of home tile
+        ////////objInt.npc_hunger = objI.npc_hunger;
+        ////////objInt.npc_health = objI.npc_health;
+        ////////objInt.npc_hp = objI.npc_hp;
+        ////////objInt.npc_arms = objI.npc_arms;          // (not used in uw1)
+        ////////objInt.npc_power = objI.npc_power;
+        ////////objInt.npc_goal = objI.npc_goal;          // goal that NPC has; 5:kill player 6:? 9:?
+        ////////objInt.npc_attitude = objI.npc_attitude;       //attitude; 0:hostile, 1:upset, 2:mellow, 3:friendly
+        ////////objInt.npc_gtarg = objI.npc_gtarg;         //goal target; 1:player
+        ////////objInt.npc_talkedto = objI.npc_talkedto;      // is 1 when player already talked to npc
+        ////////objInt.npc_level = objI.npc_level;
+        ////////objInt.npc_name = objI.npc_name;       //    (not used in uw1)
+        ////////objInt.npc_heading = objI.npc_heading;
+        ////////objInt.Projectile_Speed = objI.Projectile_Speed;
+        ////////objInt.Projectile_Pitch = objI.Projectile_Pitch;
+        ////////objInt.ProjectileHeadingMinor = objI.ProjectileHeadingMinor;
+        ////////objInt.npc_height = objI.npc_height;
 
-        objInt.ProjectileHeadingMajor = objI.ProjectileHeadingMajor;
-        objInt.MobileUnk01 = objI.MobileUnk01;
-        objInt.MobileUnk02 = objI.MobileUnk02;
-        objInt.MobileUnk03 = objI.MobileUnk03;
-        objInt.MobileUnk04 = objI.MobileUnk04;
-        objInt.MobileUnk05 = objI.MobileUnk05;
-        objInt.MobileUnk06 = objI.MobileUnk06;
-        objInt.MobileUnk07 = objI.MobileUnk07;
-        objInt.MobileUnk08 = objI.MobileUnk08;
-        objInt.MobileUnk09 = objI.MobileUnk09;
-        objInt.Projectile_Sign = objI.Projectile_Sign;
-        objInt.MobileUnk11 = objI.MobileUnk11;
-        objInt.MobileUnk12 = objI.MobileUnk12;
-        objInt.MobileUnk13 = objI.MobileUnk13;
-        objInt.MobileUnk14 = objI.MobileUnk14;
+        ////////objInt.ProjectileHeadingMajor = objI.ProjectileHeadingMajor;
+        ////////objInt.MobileUnk_0xA = objI.MobileUnk_0xA;
+        ////////objInt.MobileUnk_0xB_12_F = objI.MobileUnk_0xB_12_F;
+        ////////objInt.MobileUnk_0xD_4_FF = objI.MobileUnk_0xD_4_FF;
+        ////////objInt.MobileUnk_0xD_12_1 = objI.MobileUnk_0xD_12_1;
+        ////////objInt.MobileUnk_0xF_0_3F = objI.MobileUnk_0xF_0_3F;
+        ////////objInt.MobileUnk_0xF_C_F = objI.MobileUnk_0xF_C_F;
+        ////////objInt.MobileUnk_0x11 = objI.MobileUnk_0x11;
+        ////////objInt.ProjectileSourceID = objI.ProjectileSourceID;
+        ////////objInt.MobileUnk_0x13 = objI.MobileUnk_0x13;
+        //////////objInt.Projectile_Sign = objI.Projectile_Sign;
+        ////////objInt.MobileUnk_0x15_4_1F = objI.MobileUnk_0x15_4_1F;
+        ////////objInt.MobileUnk_0x16_0_F = objI.MobileUnk_0x16_0_F;
+        ////////objInt.MobileUnk_0x18_5_7 = objI.MobileUnk_0x18_5_7;
+        ////////objInt.MobileUnk_0x19_6_3 = objI.MobileUnk_0x19_6_3;
 
     }
 
@@ -1759,14 +1846,6 @@ public class ObjectInteraction : UWEBase{
         item = this.GetComponent<object_base>();
         return item.GetImpactPoint();
     }
-    /*public virtual Vector3 GetImpactPoint()
-{
-    object_base item;
-    item= this.GetComponent<object_base>();
-    return item.GetImpactPoint();
-}*/
-
-
 
     /// <summary>
     /// Gets the game object that contains the location of the blood spawning.
@@ -1779,47 +1858,34 @@ public class ObjectInteraction : UWEBase{
         return item.GetImpactGameObject();
     }
 
-
+    
     /// <summary>
     /// Updates the position of the object before writing it back to the lev.ark file
     /// </summary>
     public void UpdatePosition()
     {
-        if (objectloaderinfo == null)
+        if (BaseObjectData == null)
         {
             Debug.Log(this.name + " has no objectloaderinfo");
             return;
         }
-        if (ObjectLoader.isStatic(objectloaderinfo))
+       if (ObjectLoader.isTrap(this.BaseObjectData) || ObjectLoader.isTrigger(this.BaseObjectData))
         {
+            //do not update position of traps and triggers.
             return;
         }
-
-        //if (ObjectLoader.isMobile(objectloaderinfo))
+        //if (ObjectLoader.isStatic(objectloaderinfo))
         //{
-        //		return;
+        //    return;
         //}
+
         ObjectTileX = (short)Mathf.FloorToInt(this.transform.localPosition.x / 1.2f);
         ObjectTileY = (short)Mathf.FloorToInt(this.transform.localPosition.z / 1.2f);
 
-
-        //float dist =Vector3.Distance(this.transform.position,startPos);
         if (
-                    //(Vector3.Distance(this.transform.position,startPos)>0.2f)
-                    //&& 
                     (ObjectTileX != TileMap.ObjectStorageTile)
             )
-        //if ((tileX!=TileMap.ObjectStorageTile))
-        /*	{//No movement or not on the map Just update heading.
-                if (
-                            objectloaderinfo.index>=256				
-                    )						
-                    {//Only update the heading on the mobile objects.
-                    heading= (short)Mathf.RoundToInt(this.transform.rotation.eulerAngles.y/45f);
-                    }					
-            }
-        else*/
-        {
+           {
             float ceil = CurrentTileMap().CEILING_HEIGHT;
             //Updates the tilex & tileY,
             //tileX = (short)Mathf.FloorToInt(this.transform.localPosition.x/1.2f);
@@ -1848,7 +1914,8 @@ public class ObjectInteraction : UWEBase{
                     break;
             }
 
-            if ((ObjectTileX < TileMap.ObjectStorageTile) && (ObjectTileY < TileMap.ObjectStorageTile))
+            // if ((ObjectTileX < TileMap.ObjectStorageTile) && (ObjectTileY < TileMap.ObjectStorageTile))
+            if ((this.transform.position.x<= 76.8f) && (this.transform.position.y <= 76.8f))//Only update what is in bounds
             {//Update x & y
              //Remove corner
                 float offX = (this.transform.position.x) - ((float)(ObjectTileX * 1.2f));
@@ -1861,20 +1928,124 @@ public class ObjectInteraction : UWEBase{
             heading = (short)Mathf.RoundToInt(this.transform.rotation.eulerAngles.y / 45f);
 
         }
-        objectloaderinfo.heading = heading;
-        objectloaderinfo.xpos = xpos;
-        objectloaderinfo.ypos = ypos;
-        objectloaderinfo.zpos = zpos;
-        objectloaderinfo.ObjectTileX = ObjectTileX;
-        objectloaderinfo.ObjectTileY = ObjectTileY;
+        //objectloaderinfo.heading = heading;
+        //objectloaderinfo.xpos = xpos;
+        //objectloaderinfo.ypos = ypos;
+        //objectloaderinfo.zpos = zpos;
+        if ((BaseObjectData.ObjectTileX!= ObjectTileX) | (BaseObjectData.ObjectTileY != ObjectTileY))
+        {
+            //bool ComingFromOffMap = false;
+            if(BaseObjectData.ObjectTileX>64)
+            {
+                //ComingFromOffMap = true;
+                //if moving from off map make no changes.
+            }
+            else
+            {
+                Debug.Log(LinkEventCtr++ + " UNLINK For " + this.ObjectIndex + " moving from tile (" + BaseObjectData.ObjectTileX + "," + BaseObjectData.ObjectTileY + ")");
+                //Object has moved between map tiles. Update it's next  and remove it from it's previous tile.
+                UnlinkItemFromTileMapChain(this, BaseObjectData.ObjectTileX, BaseObjectData.ObjectTileY);
+            }
+            
+            if ((ObjectTileX<64) && (ObjectTileY<64) && (ObjectTileX>=0) && (ObjectTileY>=0))
+            {//Object has moved on to the map. Link it to the list for that destination tile.
+                Debug.Log(LinkEventCtr++ + " LINK For " + this.ObjectIndex + " moving to tile  (" + ObjectTileX + ", " + ObjectTileY + ")");
+                LinkItemToTileMapChain(this, ObjectTileX, ObjectTileY);
+            }
+
+            //Change the underlying data.
+            BaseObjectData.ObjectTileX = ObjectTileX;
+            BaseObjectData.ObjectTileY = ObjectTileY;
+        }
+
         startPos = this.transform.position;
+    }
+
+    //removes an object from a tile map chain
+    public static void UnlinkItemFromTileMapChain(ObjectInteraction oI, int x, int y)
+    {
+        if (!TileMap.ValidTile(x,y))
+        {
+            Debug.Log(LinkEventCtr++ + oI.name + " is attempting to unlink from an offmap tile");
+            return;
+        }
+        TileMap tm = GameWorldController.CurrentTileMap();
+        ObjectLoader objList = GameWorldController.CurrentObjectList();
+        TileInfo ti = tm.Tiles[x, y];
+
+        if (ti.indexObjectList == oI.BaseObjectData.index)
+        {//Object is at indexobjectlist. Just remove.
+            Debug.Log(LinkEventCtr++ + " UNLINK For "+ oI.ObjectIndex +  " tile " + x + "," + y + " indexobjectlist changes from " + ti.indexObjectList + " to " + oI.BaseObjectData.next);
+            ti.indexObjectList = oI.BaseObjectData.next;
+        }
+        else
+        {//Find where the object is in the chain and remove it.
+            int safetyCounter = 0;
+            ObjectLoaderInfo currObj = objList.objInfo[ti.indexObjectList];
+            while ( (currObj.next != oI.ObjectIndex) && (currObj.next!=0))
+            {//Loop through the chain until we find the object or we reach the end of the chain without finding it.
+                currObj = objList.objInfo[currObj.next];
+                safetyCounter++;
+                if (safetyCounter >= 1024)
+                {
+                    Debug.Log(LinkEventCtr++ + "Possible infinite loop for unlinking " + oI.name);
+                    break;
+                }
+            }
+            Debug.Log(LinkEventCtr++ + " UNLINK For " + oI.ObjectIndex + " " + oI.BaseObjectData.next + " becomes the next for " + currObj.index + " prev next was " + currObj.next);
+            currObj.next = oI.BaseObjectData.next;//Link the item that is found with the item that is the next of the item being removed.
+        }
+        oI.next = 0;//clear next of the moving object.
+    }
+
+    /// <summary>
+    /// Puts an object at the end of the tile map
+    /// </summary>
+    /// <param name="oI"></param>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    public static void LinkItemToTileMapChain(ObjectInteraction oI, int x, int y)
+    {
+        TileMap tm = GameWorldController.CurrentTileMap();
+        ObjectLoader objList = GameWorldController.CurrentObjectList();
+        TileInfo ti = tm.Tiles[x, y];
+
+        if (ti.indexObjectList==0)
+        {//Object is to be at the head of the chain.
+            Debug.Log(LinkEventCtr++ + " LINK For " + oI.ObjectIndex + " tile " + x + "," + y + " indexobjectlist changes from " + ti.indexObjectList + " to " + oI.BaseObjectData.index);
+            ti.indexObjectList = oI.BaseObjectData.index;           
+        }
+        else
+        {
+            int safetyCounter = 0;
+            ObjectLoaderInfo currObj = objList.objInfo[ti.indexObjectList];
+            while (currObj.next!=0)
+            {
+                currObj = objList.objInfo[currObj.next];
+                safetyCounter++;
+                if (safetyCounter >= 1024)
+                {
+                    Debug.Log(LinkEventCtr++ + "Possible infinite loop for linking " + oI.name);
+                    break;
+                }
+            }            
+            if (currObj.index != oI.BaseObjectData.index)
+            {//Make sure it is not the object linking to itself.
+                Debug.Log(LinkEventCtr++ + " LINK : For " + oI.ObjectIndex + " " + oI.BaseObjectData.index + " becomes the next for " + currObj.index + " prev next was " + currObj.next);
+                currObj.next = oI.BaseObjectData.index;
+            }                        
+        }
+        oI.next = 0;
     }
 
 
 
     public static ObjectInteraction CreateNewObject(TileMap tm, ObjectLoaderInfo currObj, ObjectLoaderInfo[] objList, GameObject parent, Vector3 position)
     {//TODO: Make sure all object creation uses this function!
-
+        if (currObj.instance!=null)
+        {//Remove the existing object instance if it already exists in order to create a new instance
+            Destroy(currObj.instance.gameObject);
+        }
         GameObject myObj = new GameObject(ObjectLoader.UniqueObjectName(currObj));
         bool CreateSprite = true;//TODO:restore the following when going live. && (currObj.invis!=1);
         bool skipRotate = false;
@@ -1887,31 +2058,24 @@ public class ObjectInteraction : UWEBase{
         //ObjectMasters objM = GameWorldController.instance.objectMaster;
         ObjectInteraction objInt = CreateObjectInteraction(myObj, 0.5f, 0.5f, 0.5f, currObj);
 
-        //objM.objProp[currObj.item_id].WorldIndex, objM.objProp[currObj.item_id].InventoryIndex, objM.objProp[currObj.item_id].InventoryIndex, objM.objProp[currObj.item_id].type, 
-        // currObj.item_id, currObj.link, currObj.quality, currObj.owner, 
-        //objM.objProp[currObj.item_id].isMoveable, objM.objProp[currObj.item_id].isUseable, objM.objProp[currObj.item_id].startFrame, objM.objProp[currObj.item_id].useSprite, 
-        //  currObj.is_quant, currObj.enchantment, currObj.flags, currObj.InUseFlag
-        //   );
-
-        
-        objInt.objectloaderinfo = currObj;
+        //objInt.objectloaderinfo = currObj;
         currObj.instance = objInt;
-        objInt.link = currObj.link;
-        objInt.quality = currObj.quality;
-        objInt.enchantment = currObj.enchantment;
-        objInt.doordir = currObj.doordir;
-        objInt.invis = currObj.invis;
+       // objInt.link = currObj.link;
+       // objInt.quality = currObj.quality;
+      //  objInt.enchantment = currObj.enchantment;
+      //  objInt.doordir = currObj.doordir;
+      //  objInt.invis = currObj.invis;
         //objInt.texture=currObj.texture;
-        objInt.zpos = currObj.zpos;
-        objInt.xpos = currObj.xpos;
-        objInt.ypos = currObj.ypos;
-        objInt.heading = currObj.heading;
-        objInt.zpos = currObj.zpos;
-        objInt.owner = currObj.owner;
+      //  objInt.zpos = currObj.zpos;
+      //  objInt.xpos = currObj.xpos;
+      //  objInt.ypos = currObj.ypos;
+      //  objInt.heading = currObj.heading;
+      //  objInt.zpos = currObj.zpos;
+     //   objInt.owner = currObj.owner;
         objInt.ObjectTileX = currObj.ObjectTileX;
         objInt.ObjectTileY = currObj.ObjectTileY;
-        objInt.objectloaderinfo = currObj;//link back to the list directly.
-        objInt.next = currObj.next;
+      //  objInt.objectloaderinfo = currObj;//link back to the list directly.
+     //   objInt.next = currObj.next;
 
         //For now just generic.
         switch (currObj.GetItemType())
@@ -1922,12 +2086,7 @@ public class ObjectInteraction : UWEBase{
                     CreateSprite = false;
                     //npc = 
                     CreateNPC(myObj, objInt, currObj);
-                    //CreateNPC(myObj,currObj.item_id.ToString(),"UW1/Sprites/Objects/OBJECTS_" + currObj.item_id.ToString() ,currObj.npc_whoami);
-                    //SetNPCProps(myObj, currObj.npc_whoami,currObj.npc_xhome,currObj.npc_yhome,currObj.npc_hunger,currObj.npc_health,currObj.npc_hp,currObj.npc_arms,currObj.npc_power,currObj.npc_goal,currObj.npc_attitude,currObj.npc_gtarg,currObj.npc_talkedto,currObj.npc_level,currObj.npc_name,"", tm.GetTileRegionName(currObj.tileX,currObj.tileY));
-                    //SetNPCProps(myObj,(MobileObject)npc,objInt,currObj, tm.GetTileRegionName(currObj.tileX,currObj.tileY),"");
-                    //HERE Container.PopulateContainer(myObj.AddComponent<Container>(), objInt, currObj.parentList);
-                    //Container cont = 
-                        myObj.AddComponent<Container>();
+                    myObj.AddComponent<Container>();
                     break;
                 }
             case NPC_WISP:
@@ -1938,7 +2097,6 @@ public class ObjectInteraction : UWEBase{
                 {
                    // NPC_VoidCreature npc = 
                     myObj.AddComponent<NPC_VoidCreature>();
-                    //SetNPCProps(myObj,(MobileObject)npc,objInt,currObj, tm.GetTileRegionName(currObj.tileX,currObj.tileY),"");
                     break;
                 }
             case HIDDENDOOR:
@@ -1955,6 +2113,7 @@ public class ObjectInteraction : UWEBase{
             case CONTAINER:
                 {
                     myObj.AddComponent<container_obj>();//placeholder obj base to allow interaction.
+                    myObj.AddComponent<Container>();
                     switch (objInt.item_id)
                     {
                         case 349://Chest variant
@@ -1977,10 +2136,10 @@ public class ObjectInteraction : UWEBase{
                             }
                         default:
                             {
-                                myObj.AddComponent<Container>();
-                                myObj.GetComponent<Container>().items = new ObjectInteraction[GameWorldController.instance.objDat.containerStats[currObj.item_id - 128].capacity + 1];
+                                myObj.GetComponent<Container>().items = new ObjectInteraction[40];
+                                //myObj.GetComponent<Container>().items = new ObjectInteraction[GameWorldController.instance.objDat.containerStats[currObj.item_id - 128].capacity + 1];
                                 //Container cont = 
-                                myObj.AddComponent<Container>();
+                                //myObj.AddComponent<Container>();
                                 //here Container.PopulateContainer(myObj.GetComponent<Container>(), objInt, currObj.parentList);
                                 break;
                             }
@@ -2023,9 +2182,13 @@ public class ObjectInteraction : UWEBase{
                 myObj.AddComponent<RuneBag>();
                 break;
             case FOOD:
-            case DRINK:
                 {
                     myObj.AddComponent<Food>();
+                    break;
+                }
+            case DRINK:
+                {
+                    myObj.AddComponent<Drink>();
                     break;
                 }
             case CLUTTER:
@@ -2104,8 +2267,11 @@ public class ObjectInteraction : UWEBase{
                     }
                 }
                 break;
-            case TORCH:
+            case TORCH:            
                 myObj.AddComponent<LightSource>();
+                break;
+            case A_CANDLE:
+                myObj.AddComponent<a_candle>();
                 break;
             case REFILLABLE_LANTERN:
                 myObj.AddComponent<Lantern>();
@@ -2691,7 +2857,7 @@ public class ObjectInteraction : UWEBase{
                             UnFreezeMovement(myObj);
 
                             myObj.GetComponent<Rigidbody>().collisionDetectionMode = CollisionDetectionMode.Continuous;
-                            myObj.GetComponent<Rigidbody>().AddForce(150f * object_base.ProjectilePropsToVector(myObj.GetComponent<object_base>()));
+                           // myObj.GetComponent<Rigidbody>().AddForce(150f * object_base.ProjectilePropsToVector(myObj.GetComponent<object_base>()));
                             break;
                     }
                 }
@@ -2819,7 +2985,7 @@ public class ObjectInteraction : UWEBase{
     //property. If the value is < 512 or 0x0200 it gives the number of stacked
     //items present. Identical objects may be stacked up to 256 objects at a
     //time. The field name "quantity" is used for this.
-    public bool isQuant    
+    public bool isQuantityBln    
     {
         get
         {
@@ -2948,5 +3114,171 @@ public class ObjectInteraction : UWEBase{
     {
         return GameWorldController.instance.objectMaster.objProp[item_id].desc;
     }
+
+    /// <summary>
+    /// Handles object destruction and removal from the gameworld.
+    /// </summary>
+    /// <param name="objToDestroy"></param>
+    public static void DestroyObjectFromUW(ObjectInteraction objToDestroy)
+    {
+        if (objToDestroy==null)
+        {
+            Debug.Log("Attempt to destroy a null object in DestroyObjectFromUW");
+            return;
+        }
+
+
+        //if inventory
+        //remove from  player inventory containers.
+
+        //if inworld
+        //if on map remove from linked lists.
+
+        //destroy gameobject.
+        //Remove from game world lists.
+        if (objToDestroy.BaseObjectData.parentList == CurrentObjectList())
+        {
+            if (objToDestroy.BaseObjectData.IsStatic)
+            {
+                Debug.Log("Releasing Static Object " + objToDestroy.name );
+                CurrentObjectList().ReleaseFreeStaticObject(objToDestroy.BaseObjectData.index);
+            }
+            else
+            {
+                Debug.Log("Releasing Mobile Object " + objToDestroy.name);
+                CurrentObjectList().ReleaseFreeMobileObject(objToDestroy.BaseObjectData.index);
+            }
+        }       
+
+        Destroy(objToDestroy.gameObject);
+    }
+
+
+    /// <summary>
+    /// Copy the static properties of an object to another object.
+    /// </summary>
+    /// <param name="Src"></param>
+    /// <param name="Dst"></param>
+    /// <param name="ChangeLink"></param>
+    /// <param name="ChangeNext"></param>
+    public static void CopyStaticProperties(ObjectInteraction Src, ObjectInteraction Dst, bool ChangeLink=true , bool ChangeNext = true)
+    {
+        Dst.item_id = Src.item_id;
+        Dst.flags = Src.flags;
+        Dst.enchantment = Src.enchantment;
+        Dst.doordir = Src.doordir;
+        Dst.invis = Src.invis;
+        Dst.isquant = Src.isquant;
+        Dst.xpos = Src.xpos;
+        Dst.ypos = Src.ypos;
+        Dst.zpos = Src.zpos;
+        Dst.heading = Src.heading;
+        Dst.quality = Src.quality;
+        if (ChangeNext)
+        {
+            Dst.next = Src.next;
+        }
+        Dst.owner = Src.owner;
+        if (ChangeLink)
+        {
+            Dst.link = Src.link;
+        }     
+
+    }
+
+
+
+    /// <summary>
+    /// Checks what the object is resistant to.
+    /// </summary>
+    /// <param name="ObjItemID"></param>
+    /// <param name="MultiplierToReturn"></param>
+    /// <param name="VulnerabilityFlags"></param>
+    /// <returns></returns>
+    public static int ScaleDamage(int ObjItemID, int MultiplierToReturn, int VulnerabilityFlags)
+    {
+        //Based on disassembly
+        int ScaleValue = GameWorldController.instance.commonObject.properties[ObjItemID].scaleValue & 0xFF;
+
+        if ((VulnerabilityFlags & ScaleValue) != 0)
+        {
+            if ((VulnerabilityFlags & 0x3) != 0)
+            {
+                if (Random.Range(1, 3) < ScaleValue)
+                {
+                    return 0;
+                }
+                else
+                {
+                    goto label4d5;
+                }
+            }
+            else
+            {
+                goto label4dd;
+            }
+        }
+        else
+        {
+            goto label4e9;
+        }
+
+        label4d5:
+        VulnerabilityFlags = VulnerabilityFlags & 0xFC;
+
+        label4dd:
+        if ((ScaleValue & VulnerabilityFlags) == 0)
+        {
+            goto label4e9;
+        }
+        else
+        {
+            return 0;
+        }
+
+        label4e9:
+        if ((VulnerabilityFlags & 8) == 0)
+        {
+            goto label4f5;
+        }
+        else
+        {
+            if ((ScaleValue & 0x20) != 0)
+            {
+                goto label4f5;
+            }
+            else
+            {
+                goto label50e;
+            }
+        }
+        
+        label4f5:
+        if ((VulnerabilityFlags & 0x20) != 0)
+        {
+            if ((ScaleValue & 0x8) == 0)
+            {
+                if (ScaleValue != 0x28)
+                {
+                    goto label50e;
+                }
+            }
+        }
+        return MultiplierToReturn;
+
+
+        label50e:
+        //the 7f code
+        if (MultiplierToReturn < 0x7F)
+        {
+            MultiplierToReturn = MultiplierToReturn << 1;
+        }
+        else
+        {
+            MultiplierToReturn = -1;
+        }
+        return MultiplierToReturn;
+    }
+
 
 }

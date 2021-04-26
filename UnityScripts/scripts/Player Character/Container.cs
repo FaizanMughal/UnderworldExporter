@@ -39,7 +39,7 @@ public class Container : UWEBase
     {
         if (objInt()!=null)
         {
-            PopulateContainer(this, objInt(), objInt().objectloaderinfo.parentList);
+            PopulateContainer(this, objInt(), objInt().BaseObjectData.parentList);
         }        
     }
 
@@ -311,10 +311,10 @@ public class Container : UWEBase
                             break;
                     }
                     objSpilled.zpos = (short)(tm.Tiles[objInt.ObjectTileX, objInt.ObjectTileY].floorHeight * 4);
-                    objSpilled.objectloaderinfo.xpos = objSpilled.xpos;
-                    objSpilled.objectloaderinfo.ypos = objSpilled.ypos;
-                    objSpilled.objectloaderinfo.zpos = objSpilled.zpos;
-                    objSpilled.transform.position = ObjectLoader.CalcObjectXYZ(objSpilled.objectloaderinfo.index, 0);
+                    objSpilled.BaseObjectData.xpos = objSpilled.xpos;
+                    objSpilled.BaseObjectData.ypos = objSpilled.ypos;
+                    objSpilled.BaseObjectData.zpos = objSpilled.zpos;
+                    objSpilled.transform.position = ObjectLoader.CalcObjectXYZ(objSpilled.BaseObjectData.index, 0);
                     RemoveItemFromContainer(i);
                     //FIELD PICKUP Spilled.GetComponent<ObjectInteraction>().PickedUp=false;
                     UnFreezeMovement(objSpilled);
@@ -426,11 +426,11 @@ public class Container : UWEBase
                     item.transform.parent = Parent;
                     if (Parent == GameWorldController.instance.DynamicObjectMarker())
                     {
-                        GameWorldController.MoveToWorld(item);
+                        //GameWorldController.MoveToWorld(item);
                     }
                     else
                     {
-                        GameWorldController.MoveToInventory(item);
+                        //GameWorldController.MoveToInventory(item);
                     }
                     if (item.GetComponent<Container>() != null)
                     {
@@ -514,6 +514,16 @@ public class Container : UWEBase
                 }
             }
 
+            //Special item cases
+            switch (CurrentObjectInHand.GetItemType())
+            {
+                case ObjectInteraction.ANVIL://Fix to stop in use anvils from being added to inventory.
+                    CurrentObjectInHand.FailMessage();
+                    UWHUD.instance.CursorIcon = UWHUD.instance.CursorIconDefault;
+                    CurrentObjectInHand = null;
+                    return true;
+            }
+
             if (Container.TestContainerRules(this, 11, false) == false)
             {
                 Valid = false;
@@ -522,7 +532,7 @@ public class Container : UWEBase
 
             if (Valid)
             {
-                if ((CurrentObjectInHand.isQuant == false) || (CurrentObjectInHand.isEnchanted))
+                if ((CurrentObjectInHand.isQuantityBln == false) || (CurrentObjectInHand.isEnchanted))
                 {
                     AddItemToContainer(CurrentObjectInHand);
                 }
@@ -605,6 +615,13 @@ public class Container : UWEBase
         if (CurrentObjectInHand == null)
         {
             return true;
+        }
+        else
+        {
+            if(CurrentObjectInHand.CanBePickedUp==false)
+            {
+                return false;
+            }
         }
         //Test the various rules for this slot
         ObjectInteraction objInt = CurrentObjectInHand;

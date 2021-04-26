@@ -58,7 +58,16 @@ public class UWCharacter : Character
             }
         }
     }
-    
+    /// <summary>
+    ///  Conversion of player transform into UW heading value for the save file.
+    /// </summary>
+    public int HeadingFull
+    {
+        get
+        {
+            return (int)(this.transform.eulerAngles.y * (255f / 360f));
+        }
+    }
 
 
     [Header("Player Movement Status")]
@@ -169,6 +178,8 @@ public class UWCharacter : Character
     //Character Status
     public int FoodLevel; //0-255 range.
     public int Fatigue;   //0-29 range
+    public int Intoxication; //0-63 range
+
     [SerializeField]   
     private short _play_poison;
     /// <summary>
@@ -209,7 +220,7 @@ public class UWCharacter : Character
         }
     }
     /// <summary>
-    /// PLayer character is death
+    /// PLayer character is dead
     /// </summary>
     public bool Death;
 
@@ -336,6 +347,9 @@ public class UWCharacter : Character
      //MusicController.instance.Death=true;
         Death = true;
         UWCharacter.InteractionMode = InteractionModeUse;
+        UWHUD.instance.window.UnSetFullScreen();
+
+
         UWHUD.instance.wpa.SetAnimation = -1;
         switch (_RES)
         {
@@ -522,8 +536,14 @@ public class UWCharacter : Character
                     NPC npc = obj.GetComponent<NPC>();
                     if (npc != null)
                     {
-                        // npc.transform.position = CurrentTileMap().getTileVector(42, 35);
-                        npc.Agent.Warp(CurrentTileMap().getTileVector(42, 35));
+                        if (npc.Agent==null)
+                        {
+                            npc.transform.position = CurrentTileMap().getTileVector(42, 35);
+                        }
+                        else
+                        {
+                            npc.Agent.Warp(CurrentTileMap().getTileVector(42, 35));
+                        }                        
                     }
                 }
                 else
@@ -1080,7 +1100,7 @@ public class UWCharacter : Character
             {
                 //split the obj.
 
-                ObjectLoaderInfo newobjt = ObjectLoader.newObject(QuantityObj.item_id, QuantityObj.quality, QuantityObj.owner, quant, 256);
+                ObjectLoaderInfo newobjt = ObjectLoader.newWorldObject(QuantityObj.item_id, QuantityObj.quality, QuantityObj.owner, quant, 256);
                 newobjt.is_quant = QuantityObj.isquant;
                 newobjt.flags = QuantityObj.flags;
                 newobjt.enchantment = QuantityObj.enchantment;
@@ -1145,7 +1165,7 @@ public class UWCharacter : Character
             {
                 if (EditorMode)
                 {//Select this object in the editor pane
-                    IngameEditor.instance.ObjectSelect.value = objInt.objectloaderinfo.index;
+                    IngameEditor.instance.ObjectSelect.value = objInt.BaseObjectData.index;
                 }
                 objInt.LookDescription();
                 return;
@@ -1274,7 +1294,7 @@ public class UWCharacter : Character
                         {
                             //right click check for quant.
                             //Pickup if either not a quantity or is a quantity of one.
-                            if ((objPicked.isQuant == false) || ((objPicked.isQuant) && (objPicked.link == 1)) || (objPicked.isEnchanted))
+                            if ((objPicked.isQuantityBln == false) || ((objPicked.isQuantityBln) && (objPicked.link == 1)) || (objPicked.isEnchanted))
                             {
                                 objPicked = Pickup(objPicked, pInv);
                             }
@@ -1463,23 +1483,24 @@ public class UWCharacter : Character
             //000~001~147~You have attained experience level
             UWHUD.instance.MessageScroll.Add(StringController.instance.GetString(1, StringController.str_you_have_attained_experience_level_));
             TrainingPoints += 3;
-            UWCharacter.Instance.MaxVIT = UWCharacter.Instance.PlayerSkills.STR * 3;
+            UWCharacter.Instance.MaxVIT = 30 + ((UWCharacter.Instance.PlayerSkills.STR * CharLevel)/5);
+            int defaultMaxMana = (UWCharacter.Instance.PlayerSkills.INT * UWCharacter.Instance.PlayerSkills.ManaSkill) >> 3;
             switch (_RES)
-            {
+            {//TODO:max these properties?
                 case GAME_UW1:
                     if ((GameWorldController.instance.LevelNo == 6) && (!Quest.instance.isOrbDestroyed))
                     {
-                        UWCharacter.Instance.PlayerMagic.TrueMaxMana = UWCharacter.Instance.PlayerSkills.ManaSkill * 3; ;
+                        UWCharacter.Instance.PlayerMagic.TrueMaxMana = defaultMaxMana;
                     }
                     else
                     {
-                        UWCharacter.Instance.PlayerMagic.MaxMana = UWCharacter.Instance.PlayerSkills.ManaSkill * 3;
+                        UWCharacter.Instance.PlayerMagic.MaxMana = defaultMaxMana;
                         UWCharacter.Instance.PlayerMagic.CurMana = UWCharacter.Instance.PlayerMagic.MaxMana;
                         UWCharacter.Instance.PlayerMagic.TrueMaxMana = UWCharacter.Instance.PlayerMagic.MaxMana;
                     }
                     break;
                 default:
-                    UWCharacter.Instance.PlayerMagic.MaxMana = UWCharacter.Instance.PlayerSkills.ManaSkill * 3;
+                    UWCharacter.Instance.PlayerMagic.MaxMana = defaultMaxMana;
                     UWCharacter.Instance.PlayerMagic.CurMana = UWCharacter.Instance.PlayerMagic.MaxMana;
                     UWCharacter.Instance.PlayerMagic.TrueMaxMana = UWCharacter.Instance.PlayerMagic.MaxMana;
                     break;

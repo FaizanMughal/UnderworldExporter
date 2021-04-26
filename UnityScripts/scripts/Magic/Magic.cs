@@ -149,7 +149,7 @@ public class Magic : UWEBase
 
             //2nd Circle
             case "Quas Corp"://Cause Fear
-            case "Wis Mani"://Detect Monster
+            case "Wis Mani"://Detect Monster in UW1 or Study Monster in UW2
             case "Uus Por"://Jump
             case "In Bet Mani"://Lesser Heal
             case "Rel Des Por"://Slow Fall
@@ -458,7 +458,7 @@ public class Magic : UWEBase
                     SetSpellCost(2);
                     if (_RES == GAME_UW2)
                     {
-                        Cast_DetectMonster(caster, SpellEffect.UW2_Spell_Effect_StudyMonster);
+                        Cast_StudyMonster(caster, ready, SpellEffect.UW2_Spell_Effect_StudyMonster);
                     }
                     else
                     {
@@ -1301,14 +1301,6 @@ public class Magic : UWEBase
     /// <param name="EffectID">Effect ID of the spell</param>
     void Cast_AnNox(GameObject caster, int EffectID)
     {//Cure Poison
-     //UWCharacter playerUW = caster.GetComponent<UWCharacter>();
-     //Get all instances of poison effect on the character and destroy them.
-     //SpellEffectPoison[] seps= caster.GetComponents<SpellEffectPoison>();
-     //for (int i =0; i<= seps.GetUpperBound(0);i++)
-     //{
-     //		seps[i].CancelEffect();
-     //}
-     //UWCharacter.Instance.Poisoned=false;
         UWCharacter.Instance.play_poison = 0;
     }
 
@@ -1423,7 +1415,7 @@ public class Magic : UWEBase
         float dropRange = 1.2f;
         if (!Physics.Raycast(ray, out hit, dropRange))
         {//No object interferes with the spellcast
-            ObjectLoaderInfo newobjt = ObjectLoader.newObject(176 + Random.Range(0, 7), 40, 0, 1, 256);
+            ObjectLoaderInfo newobjt = ObjectLoader.newWorldObject(176 + Random.Range(0, 7), 40, 0, 1, 256);
             newobjt.is_quant = 1;
             newobjt.InUseFlag = 1;
             UnFreezeMovement(GameWorldController.MoveToWorld(ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance.DynamicObjectMarker().gameObject, ray.GetPoint(dropRange))).gameObject);
@@ -1456,7 +1448,7 @@ public class Magic : UWEBase
                 if (target.npc_attitude == 0)
                 {
                     //targetName=target.name;
-                    gtarg = target.GetComponent<ObjectInteraction>().objectloaderinfo.index;
+                    gtarg = target.GetComponent<ObjectInteraction>().BaseObjectData.index;
                 }
             }
 
@@ -1471,7 +1463,7 @@ public class Magic : UWEBase
             SpellProp_SummonMonster spKM = new SpellProp_SummonMonster();
             spKM.init(SpellEffect.UW1_Spell_Effect_SummonMonster, caster);
 
-            ObjectLoaderInfo newobjt = ObjectLoader.newObject(spKM.RndNPC, 0, 0, 0, 2);
+            ObjectLoaderInfo newobjt = ObjectLoader.newWorldObject(spKM.RndNPC, 0, 0, 0, 2);
             GameObject myObj = ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance.DynamicObjectMarker().gameObject, ray.GetPoint(dropRange)).gameObject;
             myObj.GetComponent<NPC>().npc_gtarg = (short)gtarg;
             myObj.GetComponent<NPC>().npc_goal = (short)NPC.npc_goals.npc_goal_follow;
@@ -1524,7 +1516,12 @@ public class Magic : UWEBase
             {
                 if (allGameObj[i].transform.parent == null)
                 {//Only deactivate top level items
-                    allGameObj[i].SetActive(false);
+                    //allGameObj[i].SetActive(false);
+                    ObjectInteraction objI = allGameObj[i].GetComponent<ObjectInteraction>();
+                    if (objI!=null)
+                    {
+                        ObjectInteraction.DestroyObjectFromUW(objI);
+                    }
                 }
             }
         }
@@ -1969,6 +1966,39 @@ public class Magic : UWEBase
 
 
     /// <summary>
+    /// Displays monster info.
+    /// </summary>
+    /// <param name="caster">Caster.</param>
+    /// <param name="EffectID">Effect ID of the spell</param>
+    void Cast_StudyMonster(GameObject caster, bool Ready, int EffectID)
+    {
+        if (Ready)
+        {//Ready the spell to be cast.
+            UWCharacter.Instance.PlayerMagic.ReadiedSpell = "Wis Mani";
+            UWHUD.instance.CursorIcon = GameWorldController.instance.grCursors.LoadImageAt(10);
+        }
+        else
+        {
+            if (WindowDetect.CursorInMainWindow)
+            {
+                UWCharacter.Instance.PlayerMagic.ReadiedSpell = "";
+                UWHUD.instance.CursorIcon = UWHUD.instance.CursorIconDefault;
+                Ray ray = getRay(caster);
+                RaycastHit hit = new RaycastHit();
+                float dropRange = UWCharacter.Instance.GetUseRange();
+                if (Physics.Raycast(ray, out hit, dropRange))
+                {//The spell has hit something
+                    NPC npc = hit.transform.gameObject.GetComponent<NPC>();
+                    if (npc != null)
+                    {
+                        npc.StudyMonster();
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Casts name enchantment.
     /// </summary>
     /// <param name="caster">Caster.</param>
@@ -2222,7 +2252,7 @@ public class Magic : UWEBase
                                  ObjectInteraction.CreateObjectInteraction(myObj,0.5f,0.5f,0.5f,0.5f, 386, 386, 386, 39, 386, 573, 9, 37, 0, 0, 0, 1, 1, 0, 5, 1);
                                  a_arrow_trap arrow=	myObj.AddComponent<a_arrow_trap>();
                                  */
-                ObjectLoaderInfo newobjt = ObjectLoader.newObject(386, 40, 0, 0, 256);
+                ObjectLoaderInfo newobjt = ObjectLoader.newWorldObject(386, 40, 0, 0, 256);
                 GameObject myObj = ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance.DynamicObjectMarker().gameObject, pos).gameObject;
                 myObj.GetComponent<a_arrow_trap>().ExecuteTrap(myObj.GetComponent<a_arrow_trap>(), 0, 0, 0);
                 newobjt.InUseFlag = 1;
@@ -2590,7 +2620,7 @@ public class Magic : UWEBase
         awt.spellprop=spIJ;
 
 */
-        ObjectLoaderInfo newobjt = ObjectLoader.newObject(393, 40, 0, 0, 256);
+        ObjectLoaderInfo newobjt = ObjectLoader.newWorldObject(393, 40, 0, 0, 256);
         ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance.DynamicObjectMarker().gameObject, pos);
         newobjt.InUseFlag = 1;
 
@@ -3700,11 +3730,11 @@ public class Magic : UWEBase
     {//Creates the projectile.
         int index;
         //Create an object info
-        CurrentObjectList().getFreeSlot(100, out index);//Magic projectiles exist in the mobile range.
-        if (index != -1)
+        //CurrentObjectList().getFreeSlot(100, out index);//Magic projectiles exist in the mobile range.
+        if(CurrentObjectList().GetFreeMobileObject(out index))
         {
             ObjectLoaderInfo oli = CurrentObjectList().objInfo[index];
-            oli.guid = System.Guid.NewGuid();
+            //oli.guid = System.Guid.NewGuid();
             oli.item_id = spellprop.ProjectileItemId;
             oli.invis = 0;
             oli.enchantment = 0;
@@ -3792,58 +3822,62 @@ public class Magic : UWEBase
         if (mgp != null)
         {
             mgp.Projectile_Pitch = 0;
+            //mgp.Projectile_Pitch = (short)((projectilePitchAngle /90f) * 7f);
+
+            mgp.Projectile_Pitch = (short)(((int)(Mathf.Abs(direction.y * 7))) & 0x7);
+
             if (direction.y < 0)
             {
-                mgp.Projectile_Sign = 0;
+                mgp.Projectile_Pitch &= 0x7;  //Clear bit 3
             }
             else
             {
-                mgp.Projectile_Sign = 1;
+                mgp.Projectile_Pitch |= 0x8;  //Set bit 3
             }
 
-            //mgp.Projectile_Pitch = (short)((projectilePitchAngle /90f) * 7f);
-            mgp.Projectile_Pitch = (short)(Mathf.Abs((direction.y * 7)));
-            if ((projectileAngle >= 0) && (projectileAngle < 45))
-            {
-                mgp.ProjectileHeadingMajor = 0;//North
-                mgp.ProjectileHeadingMinor = (short)((projectileAngle / 45) * 32);
-            }
-            else if ((projectileAngle >= 45) && (projectileAngle < 90))
-            {
-                mgp.ProjectileHeadingMajor = 1;//North east
-                mgp.ProjectileHeadingMinor = (short)(((projectileAngle - 45) / 45) * 32);
-            }
-            else if ((projectileAngle >= 90) && (projectileAngle < 135))
-            {
-                mgp.ProjectileHeadingMajor = 2;//east
-                mgp.ProjectileHeadingMinor = (short)(((projectileAngle - 90) / 45) * 32);
-            }
-            else if ((projectileAngle >= 135) && (projectileAngle <= 180))
-            {
-                mgp.ProjectileHeadingMajor = 3;//south east
-                mgp.ProjectileHeadingMinor = (short)(((projectileAngle - 135) / 45) * 32);
-            }
-            //negative angles
-            else if ((projectileAngle < 0) && (projectileAngle >= -45))
-            {
-                mgp.ProjectileHeadingMajor = 7;//North west
-                mgp.ProjectileHeadingMinor = (short)(32 - Mathf.Abs((((-projectileAngle) / 45) * 32)));
-            }
-            else if ((projectileAngle < -45) && (projectileAngle >= -90))
-            {
-                mgp.ProjectileHeadingMajor = 6;//west
-                mgp.ProjectileHeadingMinor = (short)(32 - Mathf.Abs((((-projectileAngle - 45) / 45) * 32)));
-            }
-            else if ((projectileAngle < -90) && (projectileAngle >= -135))
-            {
-                mgp.ProjectileHeadingMajor = 5;//south west
-                mgp.ProjectileHeadingMinor = (short)(32 - Mathf.Abs((((-projectileAngle - 90) / 45) * 32)));
-            }
-            else if ((projectileAngle < -135) && (projectileAngle >= -180))
-            {
-                mgp.ProjectileHeadingMajor = 4;//south
-                mgp.ProjectileHeadingMinor = (short)(32 - Mathf.Abs((((-projectileAngle - 135) / 45) * 32)));
-            }
+            mgp.ProjectileHeading =  (short)(this.transform.eulerAngles.y * (255f / 360f));
+
+            ////////if ((projectileAngle >= 0) && (projectileAngle < 45))
+            ////////{
+            ////////    mgp.ProjectileHeadingMajor = 0;//North
+            ////////    mgp.ProjectileHeadingMinor = (short)((projectileAngle / 45) * 32);
+            ////////}
+            ////////else if ((projectileAngle >= 45) && (projectileAngle < 90))
+            ////////{
+            ////////    mgp.ProjectileHeadingMajor = 1;//North east
+            ////////    mgp.ProjectileHeadingMinor = (short)(((projectileAngle - 45) / 45) * 32);
+            ////////}
+            ////////else if ((projectileAngle >= 90) && (projectileAngle < 135))
+            ////////{
+            ////////    mgp.ProjectileHeadingMajor = 2;//east
+            ////////    mgp.ProjectileHeadingMinor = (short)(((projectileAngle - 90) / 45) * 32);
+            ////////}
+            ////////else if ((projectileAngle >= 135) && (projectileAngle <= 180))
+            ////////{
+            ////////    mgp.ProjectileHeadingMajor = 3;//south east
+            ////////    mgp.ProjectileHeadingMinor = (short)(((projectileAngle - 135) / 45) * 32);
+            ////////}
+            //////////negative angles
+            ////////else if ((projectileAngle < 0) && (projectileAngle >= -45))
+            ////////{
+            ////////    mgp.ProjectileHeadingMajor = 7;//North west
+            ////////    mgp.ProjectileHeadingMinor = (short)(32 - Mathf.Abs((((-projectileAngle) / 45) * 32)));
+            ////////}
+            ////////else if ((projectileAngle < -45) && (projectileAngle >= -90))
+            ////////{
+            ////////    mgp.ProjectileHeadingMajor = 6;//west
+            ////////    mgp.ProjectileHeadingMinor = (short)(32 - Mathf.Abs((((-projectileAngle - 45) / 45) * 32)));
+            ////////}
+            ////////else if ((projectileAngle < -90) && (projectileAngle >= -135))
+            ////////{
+            ////////    mgp.ProjectileHeadingMajor = 5;//south west
+            ////////    mgp.ProjectileHeadingMinor = (short)(32 - Mathf.Abs((((-projectileAngle - 90) / 45) * 32)));
+            ////////}
+            ////////else if ((projectileAngle < -135) && (projectileAngle >= -180))
+            ////////{
+            ////////    mgp.ProjectileHeadingMajor = 4;//south
+            ////////    mgp.ProjectileHeadingMinor = (short)(32 - Mathf.Abs((((-projectileAngle - 135) / 45) * 32)));
+            ////////}
 
         }
 

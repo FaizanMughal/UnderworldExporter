@@ -185,7 +185,7 @@ public class MusicController : UWEBase
     public UWMusicTracks[] EndGameTracks = { UWMusicTracks.UW1wanderer };
 
     private bool StopProcessing;
-    private AudioSource Aud;
+    public AudioSource Aud;
 
     public AudioSource MusicalInstruments;
 
@@ -207,6 +207,11 @@ public class MusicController : UWEBase
         Aud = this.GetComponent<AudioSource>();
         //LoadAudioFileFromWWW();
         //StartCoroutine(LoadAudioFileFromWWW("PSXUW1", 1));
+
+        //VocLoader test = new VocLoader("c:\\games\\uw1\\sound\\01.voc", "00_voc");
+        //Aud.clip = test.Audio;
+        //Aud.Play();
+
     }
 
     public IEnumerator Begin()

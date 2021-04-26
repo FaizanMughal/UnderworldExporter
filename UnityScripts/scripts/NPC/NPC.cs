@@ -9,8 +9,7 @@ using UnityEngine.AI;
 /// Controls AI status, animation, conversations and general properties.
 public class NPC : MobileObject
 {
-    public string debugname;
-
+   // public string debugname;
     public CharacterController CharController;
 
     /// <summary>
@@ -116,7 +115,7 @@ public class NPC : MobileObject
     public const int AI_ANIM_ATTACK_SECONDARY = 5000;
 
     private static short[] CompassHeadings = { 0, -1, -2, -3, 4, 3, 2, 1, 0 };//What direction the npc is facing. To adjust it's animation
-
+    
    // [Header("AI Target")]
    /// <summary>
    /// An object representing the npc_gtarg
@@ -183,6 +182,7 @@ public class NPC : MobileObject
     ///Undead Enemy flag
     public bool isUndead
     {
+        //TODO use SCALEDAMAGE to determine.
         get
         {
             switch (_RES)
@@ -352,14 +352,14 @@ public class NPC : MobileObject
     protected override void Start()
     {
         base.Start();
-        if (npc_whoami != 0)
-        {
-            debugname = StringController.instance.GetString(7, npc_whoami + 16);
-        }
-        else
-        {
-            debugname = StringController.instance.GetSimpleObjectNameUW(item_id);
-        }
+        //if (npc_whoami != 0)
+        //{
+        //    debugname = StringController.instance.GetString(7, npc_whoami + 16);
+        //}
+        //else
+        //{
+        //    debugname = StringController.instance.GetSimpleObjectNameUW(item_id);
+        //}
 
         NPC_IDi = item_id;
         StartingHP = npc_hp;
@@ -404,6 +404,7 @@ public class NPC : MobileObject
         npc_aud = new NPC_Audio(this, audMovement, audCombat,audVoice, objInt().aud);
         StartCoroutine(playfootsteps());
         StartCoroutine(playIdleBarks());
+     
     }
 
     void AI_INIT()
@@ -574,6 +575,7 @@ public class NPC : MobileObject
     /// Dumps out their inventory.
     void OnDeath()
     {
+        Debug.Log("Killing " + this.name);
         if (SpecialDeathCases())
         {
             return;
@@ -584,7 +586,7 @@ public class NPC : MobileObject
             {
                 for (int i = 0; i <= Quest.instance.ArenaOpponents.GetUpperBound(0); i++)
                 {
-                    if (Quest.instance.ArenaOpponents[i] == objInt().objectloaderinfo.index)
+                    if (Quest.instance.ArenaOpponents[i] == objInt().BaseObjectData.index)
                     {//Update the players win-loss records.
                         Quest.instance.ArenaOpponents[i] = 0;
                         Quest.instance.QuestVariables[129] = Mathf.Min(255, Quest.instance.QuestVariables[129] + 1);
@@ -594,58 +596,25 @@ public class NPC : MobileObject
                 }
             }
         }
-        objInt().objectloaderinfo.InUseFlag = 0;
-        objInt().objectloaderinfo.npc_hp = 0;
-        NPC_DEAD = true;//Tells the update to execute the NPC death animation
-        PerformDeathAnim();
-        //Dump npc inventory on the floor.
-        Container cnt = this.GetComponent<Container>();
-        if (cnt != null)
-        {
-            SetupNPCInventory();
+        if ((objInt().ObjectTileX <= 63) || (objInt().ObjectTileY <= 63))
+        {//Only dump container if on map
+            objInt().BaseObjectData.InUseFlag = 0;
+            objInt().BaseObjectData.npc_hp = 0;
+            NPC_DEAD = true;//Tells the update to execute the NPC death animation
+            PerformDeathAnim();       
+            //Dump npc inventory on the floor.
+            Container cnt = this.GetComponent<Container>();
+            if (cnt != null)
+            {
+                SetupNPCInventory();
 
-            cnt.SpillContents();//Spill contents is still not 100% reliable so don't expect to get all the items you want.
+                cnt.SpillContents();//Spill contents is still not 100% reliable so don't expect to get all the items you want.
+            }
         }
-        UWCharacter.Instance.AddXP(GameWorldController.instance.objDat.critterStats[item_id - 64].Exp);
 
+        UWCharacter.Instance.AddXP(GameWorldController.instance.objDat.critterStats[item_id - 64].Exp);
         npc_aud.PlayDeathSound();
 
-        ////////Category 	Ethereal = 0x00 (Ethereal critters like ghosts, wisps, and shadow beasts), 
-        ////////Humanoid = 0x01 (Humanlike non-thinking forms like lizardmen, trolls, ghouls, and mages),
-        ////////Flying = 0x02 (Flying critters like bats and imps), 
-        ////////Swimming = 0x03 (Swimming critters like lurkers), 
-        ////////Creeping = 0x04 (Creeping critters like rats and spiders), 
-        ////////Crawling = 0x05 (Crawling critters like slugs, worms, reapers (!), and fire elementals (!!)),
-        ////////EarthGolem = 0x11 (Only used for the earth golem),
-        ////////Human = 0x51 (Humanlike thinking forms like goblins, skeletons, mountainmen, fighters, outcasts, and stone and metal golems).
-        //////switch ((NPCCategory)GameWorldController.instance.objDat.critterStats[item_id - 64].Category)
-        //////{
-        //////    //case 0x0:
-        //////    //case 0x02:
-        //////    case NPCCategory.ethereal:
-        //////    case NPCCategory.flying:
-        //////        objInt().aud.clip = MusicController.instance.SoundEffects[MusicController.SOUND_EFFECT_NPC_DEATH_3]; break;
-        //////    //case 0x03:
-        //////    case NPCCategory.swimming:
-        //////        objInt().aud.clip = MusicController.instance.SoundEffects[MusicController.SOUND_EFFECT_SPLASH_1]; break;
-        //////    //case 0x04:
-        //////    //case 0x05:
-        //////    case NPCCategory.crawling:
-        //////    case NPCCategory.creeping:
-        //////        objInt().aud.clip = MusicController.instance.SoundEffects[MusicController.SOUND_EFFECT_NPC_DEATH_2]; break;
-        //////    //case 0x11:
-        //////    case NPCCategory.golem:
-        //////        objInt().aud.clip = MusicController.instance.SoundEffects[MusicController.SOUND_EFFECT_RUMBLE]; break;
-        //////    //case 0x01:
-        //////    case NPCCategory.human:
-        //////    case NPCCategory.humanoid:
-        //////    default:
-        //////        objInt().aud.clip = MusicController.instance.SoundEffects[MusicController.SOUND_EFFECT_NPC_DEATH_1]; break;
-        //////}
-        //if (ObjectInteraction.PlaySoundEffects)
-        //{
-        //    objInt().aud.Play();
-        //}
     }
 
     /// <summary>
@@ -665,25 +634,31 @@ public class NPC : MobileObject
         {
             if (cnt.CountItems() == 0)
             {
+                if ((item_id>=64) && (item_id <=127))
+                {
                 //Populate the container with a loot list
                 for (int i = 0; i <= GameWorldController.instance.objDat.critterStats[item_id - 64].Loot.GetUpperBound(0); i++)
-                {
-                    if (GameWorldController.instance.objDat.critterStats[item_id - 64].Loot[i] != -1)
                     {
-                        int itemid = GameWorldController.instance.objDat.critterStats[item_id - 64].Loot[i];
-                        ObjectLoaderInfo newobjt = ObjectLoader.newObject(itemid, Random.Range(1, 41), 0, 0, 256);
-                        if (itemid == 16)//Sling stone.
+                        if (GameWorldController.instance.objDat.critterStats[item_id - 64].Loot[i] != -1)
                         {
-                            newobjt.is_quant = 1;
-                            newobjt.link = Random.Range(1, 10);
-                            newobjt.quality = 40;
+                            int itemid = GameWorldController.instance.objDat.critterStats[item_id - 64].Loot[i];
+                            ObjectLoaderInfo newobjt = ObjectLoader.newWorldObject(itemid, Random.Range(1, 41), 0, 0, 256);
+                            if (newobjt != null)
+                            {
+                                if (itemid == 16)//Sling stone.
+                                {
+                                    newobjt.is_quant = 1;
+                                    newobjt.link = Random.Range(1, 10);
+                                    newobjt.quality = 40;
+                                }
+                                else
+                                {
+                                    newobjt.is_quant = 0;
+                                }
+                                newobjt.instance = ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance._ObjectMarker, GameWorldController.instance.InventoryMarker.transform.position);
+                                cnt.AddItemToContainer(newobjt.instance);
+                            }
                         }
-                        else
-                        {
-                            newobjt.is_quant = 0;
-                        }
-                        newobjt.instance = ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance._ObjectMarker, GameWorldController.instance.InventoryMarker.transform.position);
-                        cnt.AddItemToContainer(newobjt.instance);
                     }
                 }
             }
@@ -909,7 +884,10 @@ public class NPC : MobileObject
 
         if ((npc_hp <= 0))
         {//Begin death handling.
-            OnDeath();
+            if ((objInt().ObjectTileX <= 63) || (objInt().ObjectTileY <= 63))
+            {//Only kill on map npcs
+                OnDeath();
+            }            
         }
         else
         {
@@ -976,7 +954,7 @@ public class NPC : MobileObject
                     {
                         //XG gtarg = UWCharacter.Instance.LastEnemyToHitMe;
                         npc_goal = (short)npc_goals.npc_goal_attack_5;
-                        npc_gtarg = (short)UWCharacter.Instance.LastEnemyToHitMe.GetComponent<ObjectInteraction>().objectloaderinfo.index;
+                        npc_gtarg = (short)UWCharacter.Instance.LastEnemyToHitMe.GetComponent<ObjectInteraction>().BaseObjectData.index;
                         //gtargName = UWCharacter.Instance.LastEnemyToHitMe.name;
                     }
                 }
@@ -1197,7 +1175,7 @@ public class NPC : MobileObject
                 {
                     if (TileMap.ValidTile(CurTileX + x, CurTileY + y))
                     {
-                        if (CurrentTileMap().Tiles[CurTileX + x, CurTileY + y].isDoor)
+                        if (CurrentTileMap().Tiles[CurTileX + x, CurTileY + y].IsDoorForNPC)
                         {
                             GameObject door = DoorControl.findDoor(CurTileX + x, CurTileY + y);
                             if (door != null)
@@ -1517,12 +1495,10 @@ public class NPC : MobileObject
     {
         if (!((_RES == GAME_UW1) && (item_id == 124)))
         {//Do not apply damage if attaching the slasher of veils.
-            npc_hp = (short)(npc_hp - damage);
+            short NewHP = (short)(npc_hp - damage);
+            if (NewHP <0 ){ NewHP = 0; }
+            npc_hp = NewHP;
             UWHUD.instance.MonsterEyes.SetTargetFrame(npc_hp, StartingHP);
-        }
-        if (npc_hp < 0)
-        {
-            npc_hp = 0;
         }
         return true;
     }
@@ -1641,7 +1617,7 @@ public class NPC : MobileObject
         }
         if ((npc_whoami >= 1) && (npc_whoami < 255))
         {
-            if (npc_whoami == 231)//Tybal
+            if ((npc_whoami == 231)&& (_RES==GAME_UW1))//Tybal
             {
                 output = "You see Tybal";
             }
@@ -1659,8 +1635,114 @@ public class NPC : MobileObject
 
         }
         UWHUD.instance.MessageScroll.Add(output);
+        //Debug.Log("My Target is " + gtarg.name + " because my npc_gtarg=" + npc_gtarg);
         return true;
     }
+
+    /// <summary>
+    /// Implements the study spell for NPCS
+    /// </summary>
+    public void StudyMonster()
+    {
+        //Get the power and undead status of the npc
+        ///creature=0
+        ///powerful creature=1
+        ///undead creature=2
+        ///powerful undead creature=3
+        //Bit A at offset 0xD of the mobile data is how powerful the npc is.
+        int PowerAndUndead = objInt().NPC_PowerFlag;
+        if (ObjectInteraction.ScaleDamage(this.item_id, 1, 0x80)==0)
+        {//Presumably check if item is vulnerable to anti-undead damage??
+            PowerAndUndead |= 2;
+        }
+      
+        string Output = StringController.instance.GetString(1, 309 + PowerAndUndead);
+        Output = Output + "a " + NPCMoodDesc() + " " + StringController.instance.GetObjectNounUW(objInt());
+
+        UWHUD.instance.MessageScroll.Add(Output);
+
+        Output = StringController.instance.GetString(1, 313) + npc_hp + "\n";
+
+        UWHUD.instance.MessageScroll.Add(Output);
+
+
+        if (GameWorldController.instance.objDat.critterStats[item_id - 64].Poison>0)
+        {
+            Output = StringController.instance.GetString(1, 316);
+            UWHUD.instance.MessageScroll.Add(Output);
+        }
+
+
+        Output = "";
+
+        //List what spells it can cast.
+        //None of these are implemeted yet to actually cast. 
+        //Duplicate names are output here.
+        //First 3 spells are in the critter data
+        for(int k=0; k<3;k++ )
+        {
+            if ((GameWorldController.instance.objDat.critterStats[item_id - 64].Spells[k]) >  0)
+            {
+              Output =  Output + StringController.instance.GetString(6, 256 + (GameWorldController.instance.objDat.critterStats[item_id - 64].Spells[k] & 0x3F)) + " ";
+            }
+        }
+
+        //then for a special case NPC (liche) there are 3 additional spells
+        if (_RES==GAME_UW2)
+        {
+            if (item_id==0x69)
+            {
+                //add fly, open! and flameproof
+                Output = Output + StringController.instance.GetString(6, 0x139);
+                Output = Output + " " + StringController.instance.GetString(6, 0x123);
+                Output = Output + " " + StringController.instance.GetString(6, 0x11c);
+            }
+        }   
+
+        if (Output.Length > 0)
+        {
+            Output = StringController.instance.GetString(1, 324) + Output;
+            UWHUD.instance.MessageScroll.Add(Output);
+        }
+
+
+        //Print resistances
+        Output = "";
+        int[] Resistances = {3, 4, 8, 0x10, 0x20, 0x40, 0x4b};
+        //Magic, phys, fire, poison, cold, missiles
+
+        for (int i = 0; i < 6; i++)
+        {
+            if (ObjectInteraction.ScaleDamage(item_id, 1, Resistances[i]) == 0)
+            {
+                if ((Resistances[i]<=8) && (_RES==GAME_UW2) && (GameWorldController.instance.objDat.critterStats[item_id - 64].Race == 0x17))
+                {
+                    //do not apply the resistance to the liches. They should only have poison and rune of statis.
+                }
+                else
+                {
+                    Output = Output + StringController.instance.GetString(1, 0x146 + i) + " ";
+                }                
+            }
+        }
+
+        if(_RES==GAME_UW2)
+        {//IN addition all liches have immunity to statis runes. I wonder why :)
+            if(GameWorldController.instance.objDat.critterStats[item_id - 64].Race==0x17)
+            {
+                Output = Output + StringController.instance.GetString(6, 0x125);
+            }
+        }
+
+        if (Output.Length>0)
+        {
+            Output = StringController.instance.GetString(1, 0x13D) + Output;
+            UWHUD.instance.MessageScroll.Add(Output);
+        }      
+        
+
+    }
+
 
 
     /// <summary>
@@ -1959,23 +2041,17 @@ public class NPC : MobileObject
     public void ExecuteAttack()
     {
         if (ConversationVM.InConversation) { return; }
-
+        if (UWCharacter.Instance.Death)//Don't attack if the player character is dead.
+            { return; }
         if (gtarg == null)
         {
             return;
         }
         float weaponRange = 1.5f;
+        Debug.Log(this.name + " is executing an attack on " + gtarg.name);
 
-        //NPC tries to raycast at the player or object
-        Vector3 TargetingPoint;
-        //if (gtarg.name=="_Gronk")
-        //{//Try and hit the player
-        //		TargetingPoint=UWCharacter.Instance.TargetPoint.transform.position;
-        //}
-        //else
-        //{//Trying to hit an object						
-        TargetingPoint = gtarg.GetComponent<UWEBase>().GetImpactPoint();//Aims for the objects impact point	
-                                                                        //}
+        Vector3 TargetingPoint;					
+        TargetingPoint = gtarg.GetComponent<UWEBase>().GetImpactPoint();//Aims for the objects impact point	                                                                        //}
 
         Ray ray = new Ray(NPC_Launcher.transform.position, TargetingPoint - NPC_Launcher.transform.position);
 
@@ -2001,7 +2077,7 @@ public class NPC : MobileObject
                     }
                     else if (hit.transform.GetComponent<ObjectInteraction>() != null)
                     {
-                        short attackDamage = (short)Random.Range(1, GetDamage() + 1);
+                        short attackDamage = (short)Random.Range(1, CurrentAttackDamage + 1);
                         hit.transform.GetComponent<ObjectInteraction>().Attack(attackDamage, this.gameObject);
                     }
                     else
@@ -2017,6 +2093,8 @@ public class NPC : MobileObject
     /// </summary>
     public void ExecuteMagicAttack()
     {
+        if (UWCharacter.Instance.Death)//Don't attack if the player character is dead.
+        { return; }
         if (Vector3.Distance(this.transform.position, UWCharacter.Instance.CameraPos) > 8)
         {
             return;
@@ -2029,6 +2107,8 @@ public class NPC : MobileObject
     /// </summary>
     public void ExecuteRangedAttack()
     {
+        if (UWCharacter.Instance.Death)//Don't attack if the player character is dead.
+        { return; }
         if (Vector3.Distance(this.transform.position, UWCharacter.Instance.CameraPos) > 8)
         {
             return;
@@ -2046,10 +2126,11 @@ public class NPC : MobileObject
         {///Checks No object interferes with the launch
             float force = 100f * Vector3.Distance(TargetingPoint, NPC_Launcher.transform.position);
             int projectiletype = RangedAttackProjectile();
-            ObjectLoaderInfo newobjt = ObjectLoader.newObject(projectiletype, 0, 0, 1, 256);
+            ObjectLoaderInfo newobjt = ObjectLoader.newWorldObject(projectiletype, 0, 0, 1, 256);
             if (newobjt!=null)
             {
                 newobjt.is_quant = 1;
+                newobjt.ProjectileSourceID = ObjectIndex;
                 GameObject launchedItem = ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance.DynamicObjectMarker().gameObject, ray.GetPoint(dropRange - 0.1f)).gameObject;
 
                 UnFreezeMovement(launchedItem);
@@ -2064,8 +2145,8 @@ public class NPC : MobileObject
                 pd.Source = this.gameObject;
                 pd.Damage = (short)GameWorldController.instance.objDat.rangedStats[projectiletype - 16].damage;//sling damage.
                 pd.AttackCharge = 100f;
-                pd.AttackScore = GetAttack();//Assuming there is no special ranged attack score?
-                pd.ArmourDamage = GetArmourDamage();
+                pd.AttackScore = Dexterity;//Assuming there is no special ranged attack score?
+                pd.ArmourDamage = EquipDamage;
                
             }
         }
@@ -2140,24 +2221,58 @@ public class NPC : MobileObject
     }
 
 
-    public int GetAttack()
+    public int Dexterity
     {
-        return GameWorldController.instance.objDat.critterStats[item_id - 64].AttackPower;
+        get
+        {
+            return GameWorldController.instance.objDat.critterStats[item_id - 64].Dexterity;
+        }        
     }
 
-    public int GetDamage()
+    public int Strength
     {
-        return GameWorldController.instance.objDat.critterStats[item_id - 64].AttackDamage[CurrentAttack];
+        get
+        {
+            return GameWorldController.instance.objDat.critterStats[item_id - 64].Strength;
+        }
     }
 
-    public int GetDefence()
+    public int Intelligence
+    {
+        get
+        {
+            return GameWorldController.instance.objDat.critterStats[item_id - 64].Intelligence;
+        }
+    }
+
+
+    public int CurrentAttackDamage
+    {
+        get
+        {
+            return GameWorldController.instance.objDat.critterStats[item_id - 64].AttackDamage[CurrentAttack];
+        }        
+    }
+
+    public int CurrentAttackScore
+    {
+        get
+        {
+            return GameWorldController.instance.objDat.critterStats[item_id - 64].AttackChanceToHit[CurrentAttack];
+        }
+    }
+
+    public int Defence()
     {
         return GameWorldController.instance.objDat.critterStats[item_id - 64].Defence;
     }
 
-    public int GetArmourDamage()
+    public int EquipDamage
     {
-        return GameWorldController.instance.objDat.critterStats[item_id - 64].EquipDamage;
+        get
+        {
+            return GameWorldController.instance.objDat.critterStats[item_id - 64].EquipDamage;
+        }        
     }
 
     public int GetRace()
@@ -2360,7 +2475,7 @@ public class NPC : MobileObject
 
         if (bloodstain != -1)
         {
-            ObjectLoaderInfo newobjt = ObjectLoader.newObject(bloodstain, 0, 0, 0, 256);
+            ObjectLoaderInfo newobjt = ObjectLoader.newWorldObject(bloodstain, 0, 0, 0, 256);
             ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance.DynamicObjectMarker().gameObject, this.transform.position);
             //ObjectInteraction remains = ObjectInteraction.CreateNewObject(bloodstain);						
             //remains.gameObject.transform.parent=GameWorldController.instance.DynamicObjectMarker();
@@ -2368,8 +2483,8 @@ public class NPC : MobileObject
             //remains.transform.position=ai.Body.transform.position;
         }
 
-        Destroy(this.gameObject);
-
+        //Destroy(this.gameObject);
+        ObjectInteraction.DestroyObjectFromUW(this.objInt());
     }
 
     public static int findNpcByWhoAmI(int whoami)

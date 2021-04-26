@@ -144,7 +144,7 @@ public class LightSource : object_base {
 		GetInventorySlotForLightSource (pInv, ref invSlot);
 		if (invSlot != null)
 			{
-			if   ((objInt().isQuant==false) || ((objInt().isQuant) && (link<=1)) || (objInt().isEnchanted))
+			if   ((objInt().isQuantityBln==false) || ((objInt().isQuantityBln) && (link<=1)) || (objInt().isEnchanted))
 			{//Is a quantity of one or not a quantity/
 					PutLightSourceInSlot (pInv, invSlot);
 			}
@@ -200,22 +200,39 @@ public class LightSource : object_base {
 		/// <param name="invSlot">Inv slot.</param>
 	void GetInventorySlotForLightSource (PlayerInventory pInv, ref InventorySlot invSlot)
 	{
-		if ((pInv.sRightShoulder == this.objInt())) {
-			invSlot = UWHUD.instance.RightShoulder_Slot.gameObject.GetComponent<InventorySlot> ();
-		}
-		else
-			if ((pInv.sLeftShoulder == this.objInt())) {
-				invSlot = UWHUD.instance.LeftShoulder_Slot.gameObject.GetComponent<InventorySlot> ();
-			}
-			else
-				if ((pInv.sRightHand == this.objInt())) {
-					invSlot = UWHUD.instance.RightHand_Slot.gameObject.GetComponent<InventorySlot> ();
-				}
-				else
-					if ((pInv.sLeftHand == this.objInt())) {
-						invSlot = UWHUD.instance.LeftHand_Slot.gameObject.GetComponent<InventorySlot> ();
-					}
-	}
+        if ((pInv.sRightShoulder == this.objInt()))
+        {
+            invSlot = UWHUD.instance.RightShoulder_Slot.gameObject.GetComponent<InventorySlot>();
+        }
+        else if ((pInv.sLeftShoulder == this.objInt()))
+        {
+            invSlot = UWHUD.instance.LeftShoulder_Slot.gameObject.GetComponent<InventorySlot>();
+        }
+        else if ((pInv.sRightHand == this.objInt()))
+        {
+            invSlot = UWHUD.instance.RightHand_Slot.gameObject.GetComponent<InventorySlot>();
+        }
+        else if ((pInv.sLeftHand == this.objInt()))
+        {
+            invSlot = UWHUD.instance.LeftHand_Slot.gameObject.GetComponent<InventorySlot>();
+        }//item is not in a slot already. Now try and find an empty slot.
+        else if (pInv.sRightShoulder==null)
+        {
+            invSlot = UWHUD.instance.RightShoulder_Slot.gameObject.GetComponent<InventorySlot>();
+        }
+        else if (pInv.sLeftShoulder == null)
+        {
+            invSlot = UWHUD.instance.LeftShoulder_Slot.gameObject.GetComponent<InventorySlot>();
+        }
+        else if (pInv.sRightHand == null)
+        {
+            invSlot = UWHUD.instance.RightHand_Slot.gameObject.GetComponent<InventorySlot>();
+        }
+        else if (pInv.sLeftHand == null)
+        {
+            invSlot = UWHUD.instance.LeftHand_Slot.gameObject.GetComponent<InventorySlot>();
+        }
+    }
 	
 	/// <summary>
 	/// Turns the light off

@@ -49,25 +49,31 @@ public class SaveGame : Loader
 
     };
 
-    
+    /// <summary>
+    /// Array for storing inventory data.
+    /// </summary>
+   // public static char[] InventoryData = new char[768 * 8];  //Not sure if this is valid but is the same as the world object static list length
 
+    
+    /// <summary>
+    /// Ratio of UNITY co-ordinates to Tile co-ordinates
+    /// </summary>
     private const float Ratio = 213f;
+
+    //Adjustment of players vertial postion in Unity to UW co-ordinates
     private const float VertAdjust = 0.3543672f;
 
     private const int NoOfEncryptedBytes = 0xD2;//218;		//219
-                                                /// <summary>
-                                                /// Loads the player dat file into the current character
-                                                /// </summary>
-                                                /// <param name="slotNo">Slot no.</param>
+
+    /// <summary>
+    /// Loads the player dat file into the current character
+    /// </summary>
+    /// <param name="slotNo">Slot no.</param>
     public static void LoadPlayerDatUW1(int slotNo)
     {
-        char[] buffer;
-        //int x_position=0;
-        //int y_position=0;
-        //int z_position=0;
+        char[] buffer;//File data
 
-
-        int[] ActiveEffectIds = new int[3];
+        int[] ActiveEffectIds = new int[3]; //array of spell effects currently applied to the player.
         short[] ActiveEffectStability = new short[3];
         int effectCounter = 0;
 
@@ -131,10 +137,17 @@ public class SaveGame : Loader
                             Quest.instance.isCupFound = ((((int)DataLoader.getValAtAddress(buffer, i, 8) >> 6) & 0x1) == 1);
                             break;
                         }
-                    case 0x63:
+                    case 0x62://intoxication and is garamon buried.
                         {
-                            Quest.instance.isGaramonBuried = ((int)buffer[i] == 28); break;
+                            int val = ((int)DataLoader.getValAtAddress(buffer, i, 16));
+                            UWCharacter.Instance.Intoxication = (val >> 4) & 0x3f;
+                            Quest.instance.isGaramonBuried = ((val >> 10) & 0x3) == 3;
+                            break;
                         }
+                    //case 0x63:
+                    //    {
+                    //      //  Quest.instance.isGaramonBuried = ((buffer[i] >> 2) & 0x3) == 3 ; break;
+                    //    }
 
                     case 0x65: // hand, Gender & body, and class
                         break;
@@ -265,12 +278,16 @@ public class SaveGame : Loader
 
             if (UWCharacter.Instance.decode)
             {
+                StreamWriter output = new StreamWriter(Loader.BasePath + "SAVE" + slotNo + sep + "decode_" + slotNo + ".csv");
+
                 //write out decrypted file for analysis
                 byte[] dataToWrite = new byte[buffer.GetUpperBound(0) + 1];
                 for (long i = 0; i <= buffer.GetUpperBound(0); i++)
                 {
                     dataToWrite[i] = (byte)buffer[i];
+                    output.WriteLine((byte)buffer[i]);
                 }
+                output.Close();
                 File.WriteAllBytes(Loader.BasePath + "SAVE" + slotNo + sep + "decode_" + slotNo + ".dat", dataToWrite);
             }
 
@@ -431,6 +448,18 @@ public class SaveGame : Loader
                             val = val | 64;     // bit 6 is the cup found.
                         }
                         DataLoader.WriteInt8(writer, val);
+                        break;
+                    }
+                case 0x64://intoxication and is garamon buried.
+                    {
+                        int val = 0;
+                        //player intoxication
+                        val |= (UWCharacter.Instance.Intoxication << 4);
+                        DataLoader.WriteInt16(writer, val);
+                        if (Quest.instance.isGaramonBuried)
+                        {
+                            val |= 0xC00;
+                        }
                         break;
                     }
                 case 0x63: //Is garamon buried
@@ -792,6 +821,9 @@ public class SaveGame : Loader
                     }
                 case 0x61: ///    bits 1..4 play_poison and no of active effects (unchecked)//This differs from uw1 so it needs to be tested properly
                     DataLoader.WriteInt8(writer, (((NoOfActiveEffects & 0x3) << 5)) | (UWCharacter.Instance.play_poison << 1));
+                    break;
+                case 0x62:                   
+                    DataLoader.WriteInt8(writer, UWCharacter.Instance.Intoxication<<6);
                     break;
                 case 0x64:
                     {
@@ -1584,11 +1616,14 @@ public class SaveGame : Loader
             if (UWCharacter.Instance.decode)
             {
                 //write out decrypted file for analysis
+                StreamWriter output = new StreamWriter(Loader.BasePath + "SAVE" + slotNo + sep + "decode_" + slotNo + ".csv");
                 byte[] dataToWrite = new byte[buffer.GetUpperBound(0) + 1];
                 for (long i = 0; i <= buffer.GetUpperBound(0); i++)
                 {
                     dataToWrite[i] = (byte)buffer[i];
+                    output.WriteLine((byte)buffer[i]);
                 }
+                output.Close();
                 File.WriteAllBytes(Loader.BasePath + "SAVE" + slotNo + sep + "decode_" + slotNo + ".dat", dataToWrite);
             }
             /*for (int c=0; c<=pDat.GetUpperBound(0);c++)
@@ -1641,6 +1676,7 @@ public class SaveGame : Loader
                     case 0x4D: ///   weight in 0.1 stones
                         //Or STR * 2; safe to ignore?
                         //testvalue=(int)DataLoader.getValAtAddress(buffer,i,16);break;
+                        Debug.Log("Weight value is " + (int)DataLoader.getValAtAddress(buffer, i, 16) + " str = " + UWCharacter.Instance.PlayerSkills.STR);
                         break;
                     case 0x4F: ///   experience in 0.1 points
                         UWCharacter.Instance.EXP = (int)(DataLoader.getValAtAddress(buffer, i, 32) *0.1f); break;
@@ -1657,6 +1693,9 @@ public class SaveGame : Loader
                         UWCharacter.Instance.play_poison = (short)((buffer[i] >> 1) & 0xF);
                         UWCharacter.Instance.poison_timer = 30f;
                         effectCounter = ((int)buffer[i] >> 6) & 0x3;
+                        break;
+                    case 0x62://alco
+                        UWCharacter.Instance.Intoxication = ((int)DataLoader.getValAtAddress(buffer, i, 16) >> 6) & 0x3f;
                         break;
                     case 0x64:
                         Quest.instance.DreamPlantEaten = (1 == (((int)buffer[i]) & 0x1));
@@ -2266,7 +2305,9 @@ public class SaveGame : Loader
             switch (i)
             {
                 case 0x1F://Strength
-                    UWCharacter.Instance.PlayerSkills.STR = (int)buffer[i]; break;
+                    UWCharacter.Instance.PlayerSkills.STR = (int)buffer[i];
+                    GameWorldController.instance.objDat.critterStats[63].Strength = UWCharacter.Instance.PlayerSkills.STR;
+                    break;
                 case 0x20://Dex
                     UWCharacter.Instance.PlayerSkills.DEX = (int)buffer[i]; break;
                 case 0x21: ///    Intelligence
@@ -2529,46 +2570,39 @@ public class SaveGame : Loader
         //Inventory list
         int NoOfItems = (buffer.GetUpperBound(0) - StartOffset) / 8;
 
-        GameWorldController.instance.inventoryLoader.objInfo = new ObjectLoaderInfo[NoOfItems + 2];
+        GameWorldController.instance.inventoryLoader.objInfo = new ObjectLoaderInfo[NoOfItems+2];   //+ 2];
         int x = 1;
+
+        //InventoryData = new char[768 * 8];
+        //if (buffer.GetUpperBound(0) >= StartOffset)
+        //{//Copy the inventory data buffer into memory. Inventory object data will be manipulated here.
+        //    int i = StartOffset;            
+        //    while (i < buffer.GetUpperBound(0))
+        //    {
+        //        InventoryData[i - StartOffset] = buffer[i];
+        //        i++;
+        //    }
+        //}
+        int Add_ptr = StartOffset;
+        ///Initialise as many inventory objects as needed
         if (buffer.GetUpperBound(0) >= StartOffset)
         {
-            int i = StartOffset;
-            while (i < buffer.GetUpperBound(0))
+            for (x = 1; x <= GameWorldController.instance.inventoryLoader.objInfo.GetUpperBound(0);x++)
             {
-                GameWorldController.instance.inventoryLoader.objInfo[x] = new ObjectLoaderInfo();
-                GameWorldController.instance.inventoryLoader.objInfo[x].index = x;
-                GameWorldController.instance.inventoryLoader.objInfo[x].guid = System.Guid.NewGuid();
+                GameWorldController.instance.inventoryLoader.objInfo[x] = new ObjectLoaderInfo(x, GameWorldController.CurrentTileMap(),false);//Inventory indices start at 1
                 GameWorldController.instance.inventoryLoader.objInfo[x].parentList = GameWorldController.instance.inventoryLoader;
                 GameWorldController.instance.inventoryLoader.objInfo[x].ObjectTileX = TileMap.ObjectStorageTile;
                 GameWorldController.instance.inventoryLoader.objInfo[x].ObjectTileY = TileMap.ObjectStorageTile;
                 GameWorldController.instance.inventoryLoader.objInfo[x].InUseFlag = 1;
-                GameWorldController.instance.inventoryLoader.objInfo[x].item_id = (int)(DataLoader.getValAtAddress(buffer, i + 0, 16)) & 0x1FF;
-                GameWorldController.instance.inventoryLoader.objInfo[x].flags = (short)(((DataLoader.getValAtAddress(buffer, i + 0, 16)) >> 9) & 0x07);
-                GameWorldController.instance.inventoryLoader.objInfo[x].enchantment = (short)(((DataLoader.getValAtAddress(buffer, i + 0, 16)) >> 12) & 0x01);
-                GameWorldController.instance.inventoryLoader.objInfo[x].doordir = (short)(((DataLoader.getValAtAddress(buffer, i + 0, 16)) >> 13) & 0x01);
-                GameWorldController.instance.inventoryLoader.objInfo[x].invis = (short)(((DataLoader.getValAtAddress(buffer, i + 0, 16)) >> 14) & 0x01);
-                GameWorldController.instance.inventoryLoader.objInfo[x].is_quant = (short)(((DataLoader.getValAtAddress(buffer, i + 0, 16)) >> 15) & 0x01);
-                //position at +2
-                GameWorldController.instance.inventoryLoader.objInfo[x].zpos = (short)((DataLoader.getValAtAddress(buffer, i + 2, 16)) & 0x7F);
-                //bits 0-6 
-                GameWorldController.instance.inventoryLoader.objInfo[x].heading = (short)(((DataLoader.getValAtAddress(buffer, i + 2, 16)) >> 7) & 0x07);
-                //bits 7-9
-                GameWorldController.instance.inventoryLoader.objInfo[x].ypos = (short)(((DataLoader.getValAtAddress(buffer, i + 2, 16)) >> 10) & 0x07);
-                //bits 10-12
-                GameWorldController.instance.inventoryLoader.objInfo[x].xpos = (short)(((DataLoader.getValAtAddress(buffer, i + 2, 16)) >> 13) & 0x07);
-                //bits 13-15
-                //+4
-                GameWorldController.instance.inventoryLoader.objInfo[x].quality = (short)((DataLoader.getValAtAddress(buffer, i + 4, 16)) & 0x3F);
-                GameWorldController.instance.inventoryLoader.objInfo[x].next = (int)((DataLoader.getValAtAddress(buffer, i + 4, 16) >> 6) & 0x3FF);
-                //+6
-                GameWorldController.instance.inventoryLoader.objInfo[x].owner = (short)(DataLoader.getValAtAddress(buffer, i + 6, 16) & 0x3F);
-                //bits 0-5
-                GameWorldController.instance.inventoryLoader.objInfo[x].link = (int)(DataLoader.getValAtAddress(buffer, i + 6, 16) >> 6 & 0x3FF);
-                //bits 6-15
-                i = i + 8;
-                x++;
+
+                GameWorldController.instance.inventoryLoader.objInfo[x].InventoryData = new char[8];
+                for (int i = 0; i<8;i++)
+                {//Copy data into the local objectloader buffer for the inventory object.
+                    GameWorldController.instance.inventoryLoader.objInfo[x].InventoryData[i] = buffer[Add_ptr + i];
+                }
+                Add_ptr += 8;
             }
+
             //Create the inventory objects
             ObjectLoader.RenderObjectList(GameWorldController.instance.inventoryLoader, CurrentTileMap(), GameWorldController.instance.InventoryMarker);
             ObjectLoader.LinkObjectListWands(GameWorldController.instance.inventoryLoader);
@@ -2578,16 +2612,13 @@ public class SaveGame : Loader
                 //Apply objects to slots
                 int index = ((int)DataLoader.getValAtAddress(buffer, j, 16) >> 6);
                 ObjectInteraction item; 
-                //string item_name;
                 if (index != 0)
                 {
                     item = GameWorldController.instance.inventoryLoader.objInfo[index].instance;
-                    //item_name = ObjectLoader.UniqueObjectName(objLoader.objInfo[index]);
                 }
                 else
                 {
                     item = null;
-                    //item_name = "";
                 }
 
                 switch ((InventorySlotsOffsets)(j))
@@ -2713,6 +2744,10 @@ public class SaveGame : Loader
         }
     }
 
+
+    /// <summary>
+    /// Re-initialise the UI when loading a new game.
+    /// </summary>
     static void ResetUI()
     {
         UWCharacter.Instance.playerInventory.currentContainer = UWCharacter.Instance.playerInventory.playerContainer; // "_Gronk";
@@ -3051,6 +3086,7 @@ public class SaveGame : Loader
         //   z-position
         int z_position = (int)DataLoader.getValAtAddress(buffer, 0x59, 16);
         float heading = (float)DataLoader.getValAtAddress(buffer, 0x5c, 8);
+        Debug.Log("Player heading is " + heading);
         UWCharacter.Instance.transform.eulerAngles = new Vector3(0f, heading * (360f / 255f), 0f);
         UWCharacter.Instance.playerCam.transform.localRotation = Quaternion.identity;
         GameWorldController.instance.startLevel = (short)(DataLoader.getValAtAddress(buffer, 0x5d, 16) - 1);
@@ -3068,7 +3104,8 @@ public class SaveGame : Loader
         DataLoader.WriteInt16(writer, (int)(UWCharacter.Instance.transform.position.z * Ratio));
         DataLoader.WriteInt16(writer, (int)((UWCharacter.Instance.transform.position.y - VertAdjust) * (Ratio)));
         DataLoader.WriteInt8(writer, 0);
-        DataLoader.WriteInt8(writer, (int)(UWCharacter.Instance.transform.eulerAngles.y * (255f / 360f)));
+        // DataLoader.WriteInt8(writer, (int)(UWCharacter.Instance.transform.eulerAngles.y * (255f / 360f)));
+        DataLoader.WriteInt8(writer, (int)(UWCharacter.Instance.HeadingFull));
         DataLoader.WriteInt8(writer, GameWorldController.instance.LevelNo + 1);
     }
 
@@ -3322,8 +3359,8 @@ public class SaveGame : Loader
                         break;
                     case 0x5C: ///   heading
                         {
-                            float heading = UWCharacter.Instance.transform.eulerAngles.y * (255f / 360f);
-                            DataLoader.WriteInt8(writer, (int)heading); break;
+                            //float heading = UWCharacter.Instance.transform.eulerAngles.y * (255f / 360f);
+                            DataLoader.WriteInt8(writer, UWCharacter.Instance.HeadingFull); break;
                             //break;
                         }
                     case 0x5D: ///   dungeon level										

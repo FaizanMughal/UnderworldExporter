@@ -60,7 +60,8 @@ public class Impact : object_base {
 			if (StartFrame>=EndFrame)
 			{
 				Active=false;
-				Destroy (this.gameObject);
+                //Destroy (this.gameObject);
+                ObjectInteraction.DestroyObjectFromUW(this.objInt());
 			}
 			else
 			{//Loads the next animation frame
@@ -71,22 +72,28 @@ public class Impact : object_base {
 
 	public static GameObject SpawnHitImpact(int Item_ID, Vector3 ImpactPosition, int StartFrame, int EndFrame)
 	{
-		ObjectLoaderInfo newobjt= ObjectLoader.newObject(Item_ID,40,StartFrame,1,256);
-        if (newobjt!=null)
+        try
         {
-            ObjectInteraction objInt = ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance.DynamicObjectMarker().gameObject, ImpactPosition);
-            //objInt.GetComponent<AnimationOverlay>().Looping = false;
-            objInt.GetComponent<AnimationOverlay>().StartFrame = StartFrame;
-            objInt.GetComponent<AnimationOverlay>().NoOfFrames = EndFrame - StartFrame;
-            objInt.GetComponent<AnimationOverlay>().StartingDuration = objInt.GetComponent<AnimationOverlay>().NoOfFrames;
-            objInt.gameObject.layer = LayerMask.NameToLayer("Animation");
-            return objInt.gameObject;
+            ObjectLoaderInfo newobjt = ObjectLoader.newWorldObject(Item_ID, 40, StartFrame, 1, 256);
+            if (newobjt != null)
+            {
+                ObjectInteraction objInt = ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance.DynamicObjectMarker().gameObject, ImpactPosition);
+                //objInt.GetComponent<AnimationOverlay>().Looping = false;
+                objInt.GetComponent<AnimationOverlay>().StartFrame = StartFrame;
+                objInt.GetComponent<AnimationOverlay>().NoOfFrames = EndFrame - StartFrame;
+                objInt.GetComponent<AnimationOverlay>().StartingDuration = objInt.GetComponent<AnimationOverlay>().NoOfFrames;
+                objInt.gameObject.layer = LayerMask.NameToLayer("Animation");
+                return objInt.gameObject;
+            }
+            else
+            {
+                return null;
+            }
         }
-        else
+        catch
         {
             return null;
         }
-
 	}
 
 

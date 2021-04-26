@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Linq; // used for Sum of array
 
 /// <summary>
 /// Tile map renderer.
@@ -137,42 +138,7 @@ public class TileMapRenderer : Loader
         {
             if (!UpdateOnly)
             {
-                //Ceiling
-                TileInfo tmp = new TileInfo(Level, 0,0,TILE_OPEN,
-                    0,0, 
-                    0,0, Level.Tiles[0, 0].shockCeilingTexture,
-                    0,0,0,0);   
-                tmp.DimX = TileMap.TileMapSizeX + 1;
-                tmp.DimY = TileMap.TileMapSizeY + 1;
-                tmp.ceilingHeight = 0;
-                tmp.floorTexture = Level.Tiles[0, 0].shockCeilingTexture;
-                tmp.shockCeilingTexture = Level.Tiles[0, 0].shockCeilingTexture;
-                tmp.VisibleFaces[vTOP] = false;
-                tmp.VisibleFaces[vEAST] = false;
-                tmp.VisibleFaces[vBOTTOM] = true;
-                tmp.VisibleFaces[vWEST] = false;
-                tmp.VisibleFaces[vNORTH] = false;
-                tmp.VisibleFaces[vSOUTH] = false;
-                GameWorldController.instance.ceiling = RenderTile(sceneryParent, tmp.tileX, tmp.tileX, tmp, false, false, true, false);
-
-                //And at 99,99 for special stuff.
-                for (short x = TileMap.ObjectStorageTile - 1; x <= TileMap.ObjectStorageTile + 1; x++)
-                {
-                    for (short y = TileMap.ObjectStorageTile - 1; y <= TileMap.ObjectStorageTile + 1; y++)
-                    {
-                        tmp.tileX = x;
-                        tmp.tileY = y;
-                        if ((x != TileMap.ObjectStorageTile) || (y != TileMap.ObjectStorageTile))
-                        {
-                            tmp.tileType = 0;
-                        }
-                        else
-                        {
-                            tmp.tileType = 1;
-                        }
-                        RenderTile(sceneryParent, x, y, tmp, false, false, false, false);
-                    }
-                }
+                GameObject output = RenderCeiling(parent, 0, 0, CEILING_HEIGHT, CEILING_HEIGHT + CEIL_ADJ,Level.UWCeilingTexture, "CEILING");
             }
         }
         if (!UpdateOnly)
@@ -228,6 +194,13 @@ public class TileMapRenderer : Loader
     /// <param name="i"></param>
     public static void RenderDoor(GameObject Parent, TileMap level, ObjectLoader objList, int i)
     {
+        if ((objList.objInfo[i].ObjectTileX>=64) || (objList.objInfo[i].ObjectTileY >= 64))
+        {//door is off map!
+            return; 
+        }
+
+
+
         if (level.Tiles[objList.objInfo[i].ObjectTileX, objList.objInfo[i].ObjectTileY].tileType != TILE_SOLID)
         {
             float floorheight = (float)level.Tiles[objList.objInfo[i].ObjectTileX, objList.objInfo[i].ObjectTileY].floorHeight * 0.15f;
@@ -317,7 +290,6 @@ public class TileMapRenderer : Loader
 
         GameObject tile = RenderCuboid(Parent, leftHand, UVs, position, MatsToUse, 1, "rear_leftside_" + ObjectLoader.UniqueObjectName(currDoor));
         tile.transform.Rotate(new Vector3(0f, 0f, -180f));
-
 
         //y0 = +doorthickness /2f;
         //y1 = -doorthickness /2f;
@@ -691,7 +663,7 @@ public class TileMapRenderer : Loader
             {
                 if ((objList.objInfo[i].GetItemType() == ObjectInteraction.PILLAR) && (objList.objInfo[i].InUseFlag == 1))
                 {
-                    Vector3 position = ObjectLoader.CalcObjectXYZ( i, 0);
+                    Vector3 position = ObjectLoader.CalcObjectXYZ(i, 0);
                     //position =new Vector3( objList.objInfo[i].tileX*1.2f + 1.2f / 2f,position.y, objList.objInfo[i].tileY*1.2f + 1.2f / 2f);
                     Vector3[] Verts = new Vector3[24];
                     Vector2[] UVs = new Vector2[24];
@@ -855,7 +827,7 @@ public class TileMapRenderer : Loader
         }
         Material tmobj;
 
-        int TextureIndex= (objList.objInfo[i].enchantment << 3) | objList.objInfo[i].flags & 0x3F;//<--Is this correct. Flags is only 3 bits long!
+        int TextureIndex = (objList.objInfo[i].enchantment << 3) | objList.objInfo[i].flags & 0x3F;//<--Is this correct. Flags is only 3 bits long!
         if (TextureIndex >= 2)
         {
             if (_RES == GAME_UW2)
@@ -1536,6 +1508,96 @@ public class TileMapRenderer : Loader
     }
 
 
+
+    /// <summary>
+    /// Renders the a cuboid with no slopes
+    /// </summary>
+    /// <param name="parent">Parent.</param>
+    /// <param name="x">The x coordinate.</param>
+    /// <param name="y">The y coordinate.</param>
+    /// <param name="t">T.</param>
+    /// <param name="Water">If set to <c>true</c> water.</param>
+    /// <param name="Bottom">Bottom.</param>
+    /// <param name="Top">Top.</param>
+    /// <param name="TileName">Tile name.</param>
+    static GameObject RenderCeiling(GameObject parent, int x, int y, int Bottom, int Top, int CeilingTexture, string TileName)
+    {
+
+        //Draw a cube with no slopes.
+        int NumberOfVisibleFaces = 1;
+
+        //Allocate enough verticea and UVs for the faces
+        Vector3[] verts = new Vector3[NumberOfVisibleFaces * 4];
+        Vector2[] uvs = new Vector2[NumberOfVisibleFaces * 4];
+        float floorHeight = (float)(Top * 0.15f);
+        float baseHeight = (float)(Bottom * 0.15f);
+
+        //Now create the mesh
+        GameObject Tile = new GameObject(TileName);
+        Tile.layer = LayerMask.NameToLayer("MapMesh");
+        Tile.transform.parent = parent.transform;
+        Tile.transform.position = new Vector3(x * 1.2f, 0.0f, y * 1.2f);
+
+        Tile.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
+        MeshFilter mf = Tile.AddComponent<MeshFilter>();
+        MeshRenderer mr = Tile.AddComponent<MeshRenderer>();
+
+        Mesh mesh = new Mesh();
+        mesh.subMeshCount = NumberOfVisibleFaces;//Should be no of visible faces
+
+        Material[] MatsToUse = new Material[NumberOfVisibleFaces];
+        //Now allocate the visible faces to triangles.
+        int FaceCounter = 0;//Tracks which number face we are now on.
+        float PolySize = Top - Bottom;
+        float uv0 = (float)(Bottom * 0.125f);
+        float uv1 = (PolySize / 8.0f) + (uv0);
+       // float offset = 0f;
+
+        //bottom wall vertices
+        MatsToUse[FaceCounter] = GameWorldController.instance.MaterialMasterList[CurrentTileMap().texture_map[CeilingTexture]];
+        verts[0 + (4 * FaceCounter)] = new Vector3(0f, 1.2f * 64, baseHeight);
+        verts[1 + (4 * FaceCounter)] = new Vector3(0f, 0f, baseHeight);
+        verts[2 + (4 * FaceCounter)] = new Vector3(-1.2f * 64, 0f, baseHeight);
+        verts[3 + (4 * FaceCounter)] = new Vector3(-1.2f * 64, 1.2f * 64, baseHeight);
+        //Change default UVs
+        uvs[0 + (4 * FaceCounter)] = new Vector2(0.0f, 0.0f);
+        uvs[1 + (4 * FaceCounter)] = new Vector2(0.0f, 1.0f * 64);
+        uvs[2 + (4 * FaceCounter)] = new Vector2(64, 1.0f * 64);
+        uvs[3 + (4 * FaceCounter)] = new Vector2(64, 0.0f);
+
+
+
+        //Apply the uvs and create my tris
+        mesh.vertices = verts;
+        mesh.uv = uvs;
+        FaceCounter = 0;
+        int[] tris = new int[6];
+        tris[0] = 0 + (4 * FaceCounter);
+        tris[1] = 1 + (4 * FaceCounter);
+        tris[2] = 2 + (4 * FaceCounter);
+        tris[3] = 0 + (4 * FaceCounter);
+        tris[4] = 2 + (4 * FaceCounter);
+        tris[5] = 3 + (4 * FaceCounter);
+        mesh.SetTriangles(tris, FaceCounter);
+        FaceCounter++;
+
+        mr.materials = MatsToUse;//mats;
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        mf.mesh = mesh;
+        if (EnableCollision)
+        {
+            MeshCollider mc = Tile.AddComponent<MeshCollider>();
+            mc.sharedMesh = null;
+            mc.sharedMesh = mesh;
+        }
+        return Tile;
+    }
+
+
+
+
+
     /// <summary>
     /// Renders the cuboid from an arbitary set of vertices and uvs
     /// </summary>
@@ -2186,7 +2248,7 @@ public class TileMapRenderer : Loader
                 {
                     //A floor
                     TileName = "Tile_" + x.ToString("D2") + "_" + y.ToString("D2");
-                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_SLOPE_N, t.shockSteep, 1, TileName);
+                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_SLOPE_N, t.TileSlopeSteepness, 1, TileName);
                 }
             }
             else
@@ -2197,7 +2259,7 @@ public class TileMapRenderer : Loader
                 bool visT = t.VisibleFaces[vTOP];
                 t.VisibleFaces[vBOTTOM] = true;
                 t.VisibleFaces[vTOP] = false;
-                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_SLOPE_N, t.shockSteep, 0, TileName);
+                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_SLOPE_N, t.TileSlopeSteepness, 0, TileName);
                 t.VisibleFaces[vBOTTOM] = visB;
                 t.VisibleFaces[vTOP] = visT;
             }
@@ -2225,7 +2287,7 @@ public class TileMapRenderer : Loader
                 {
                     //A floor
                     TileName = "Tile_" + x.ToString("D2") + "_" + y.ToString("D2");
-                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_SLOPE_S, t.shockSteep, 1, TileName);
+                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_SLOPE_S, t.TileSlopeSteepness, 1, TileName);
                 }
             }
             else
@@ -2236,7 +2298,7 @@ public class TileMapRenderer : Loader
                 bool visT = t.VisibleFaces[vTOP];
                 t.VisibleFaces[vBOTTOM] = true;
                 t.VisibleFaces[vTOP] = false;
-                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_SLOPE_S, t.shockSteep, 0, TileName);
+                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_SLOPE_S, t.TileSlopeSteepness, 0, TileName);
                 t.VisibleFaces[vBOTTOM] = visB;
                 t.VisibleFaces[vTOP] = visT;
             }
@@ -2264,7 +2326,7 @@ public class TileMapRenderer : Loader
                 {
                     //A floor
                     TileName = "Tile_" + x.ToString("D2") + "_" + y.ToString("D2");
-                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_SLOPE_W, t.shockSteep, 1, TileName);
+                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_SLOPE_W, t.TileSlopeSteepness, 1, TileName);
                 }
             }
             else
@@ -2275,7 +2337,7 @@ public class TileMapRenderer : Loader
                 bool visT = t.VisibleFaces[vTOP];
                 t.VisibleFaces[vBOTTOM] = true;
                 t.VisibleFaces[vTOP] = false;
-                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_SLOPE_W, t.shockSteep, 0, TileName);
+                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_SLOPE_W, t.TileSlopeSteepness, 0, TileName);
                 t.VisibleFaces[vBOTTOM] = visB;
                 t.VisibleFaces[vTOP] = visT;
             }
@@ -2303,7 +2365,7 @@ public class TileMapRenderer : Loader
                 {
                     //A floor
                     TileName = "Tile_" + x.ToString("D2") + "_" + y.ToString("D2");
-                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_SLOPE_E, t.shockSteep, 1, TileName);
+                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_SLOPE_E, t.TileSlopeSteepness, 1, TileName);
                 }
             }
             else
@@ -2314,7 +2376,7 @@ public class TileMapRenderer : Loader
                 bool visT = t.VisibleFaces[vTOP];
                 t.VisibleFaces[vBOTTOM] = true;
                 t.VisibleFaces[vTOP] = false;
-                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_SLOPE_E, t.shockSteep, 0, TileName);
+                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_SLOPE_E, t.TileSlopeSteepness, 0, TileName);
                 t.VisibleFaces[vBOTTOM] = visB;
                 t.VisibleFaces[vTOP] = visT;
             }
@@ -2342,13 +2404,13 @@ public class TileMapRenderer : Loader
             //RenderSlopeWTile( parent , x, y, t, Water, invert);
             //t.tileType = originalTile;
             string TileName = "VNW_" + x.ToString("D2") + "_" + y.ToString("D2");
-            RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_VALLEY_NW, t.shockSteep, 1, TileName);
+            RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_VALLEY_NW, t.TileSlopeSteepness, 1, TileName);
         }
         else
         {
             string TileName = "VNW_Ceiling_" + x.ToString("D2") + "_" + y.ToString("D2");
             t.VisibleFaces[vBOTTOM] = true;
-            RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_RIDGE_SE, t.shockSteep, 0, TileName);
+            RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_RIDGE_SE, t.TileSlopeSteepness, 0, TileName);
         }
         return;
     }
@@ -2374,13 +2436,13 @@ public class TileMapRenderer : Loader
             //t.tileType = originalTile;
             //return;
             string TileName = "VNE_" + x.ToString("D2") + "_" + y.ToString("D2");
-            RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_VALLEY_NE, t.shockSteep, 1, TileName);
+            RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_VALLEY_NE, t.TileSlopeSteepness, 1, TileName);
         }
         else
         {
             string TileName = "VNE_Ceiling_" + x.ToString("D2") + "_" + y.ToString("D2");
             t.VisibleFaces[vBOTTOM] = true;
-            RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_RIDGE_SW, t.shockSteep, 0, TileName);
+            RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_RIDGE_SW, t.TileSlopeSteepness, 0, TileName);
         }
     }
 
@@ -2406,14 +2468,14 @@ public class TileMapRenderer : Loader
             //return;
 
             string TileName = "VSW_" + x.ToString("D2") + "_" + y.ToString("D2");
-            RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_VALLEY_SW, t.shockSteep, 1, TileName);
+            RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_VALLEY_SW, t.TileSlopeSteepness, 1, TileName);
 
         }
         else
         {
             string TileName = "VSW_Ceiling_" + x.ToString("D2") + "_" + y.ToString("D2");
             t.VisibleFaces[vBOTTOM] = true;
-            RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_RIDGE_NE, t.shockSteep, 0, TileName);
+            RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_RIDGE_NE, t.TileSlopeSteepness, 0, TileName);
         }
 
     }
@@ -2439,13 +2501,13 @@ public class TileMapRenderer : Loader
             //t.tileType = originalTile;
             //return;	
             string TileName = "VSE_" + x.ToString("D2") + "_" + y.ToString("D2");
-            RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_VALLEY_SE, t.shockSteep, 1, TileName);
+            RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_VALLEY_SE, t.TileSlopeSteepness, 1, TileName);
         }
         else
         {
             string TileName = "VSE_Ceiling_" + x.ToString("D2") + "_" + y.ToString("D2");
             t.VisibleFaces[vBOTTOM] = true;
-            RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_RIDGE_NW, t.shockSteep, 0, TileName);
+            RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_RIDGE_NW, t.TileSlopeSteepness, 0, TileName);
 
         }
 
@@ -2473,7 +2535,7 @@ public class TileMapRenderer : Loader
                     //RenderSlopeNTile( parent , x, y, t, Water, invert);
                     //RenderSlopeWTile( parent , x, y, t, Water, invert);
                     string TileName = "TileRNW_" + x.ToString("D2") + "_" + y.ToString("D2");
-                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_RIDGE_NW, t.shockSteep, 1, TileName);
+                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_RIDGE_NW, t.TileSlopeSteepness, 1, TileName);
                 }
             }
             else
@@ -2481,7 +2543,7 @@ public class TileMapRenderer : Loader
                 //made of upper slope e and upper slope s
                 string TileName = "RNW_Ceiling_" + x.ToString("D2") + "_" + y.ToString("D2");
                 t.VisibleFaces[vBOTTOM] = true;
-                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_VALLEY_SE, t.shockSteep, 0, TileName);
+                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_VALLEY_SE, t.TileSlopeSteepness, 0, TileName);
 
                 //RenderSlopeETile( parent , x, y, t, Water, invert);
                 //RenderSlopeSTile( parent , x, y, t, Water, invert);
@@ -2512,7 +2574,7 @@ public class TileMapRenderer : Loader
                     //RenderSlopeNTile( parent , x, y, t, Water, invert);
                     //RenderSlopeETile( parent , x, y, t, Water, invert);
                     string TileName = "TileRNE_" + x.ToString("D2") + "_" + y.ToString("D2");
-                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_RIDGE_NE, t.shockSteep, 1, TileName);
+                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_RIDGE_NE, t.TileSlopeSteepness, 1, TileName);
                 }
             }
             else
@@ -2521,7 +2583,7 @@ public class TileMapRenderer : Loader
              //RenderSlopeWTile( parent , x, y, t, Water, invert);
                 string TileName = "RNE_Ceiling_" + x.ToString("D2") + "_" + y.ToString("D2");
                 t.VisibleFaces[vBOTTOM] = true;
-                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_VALLEY_SW, t.shockSteep, 0, TileName);
+                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_VALLEY_SW, t.TileSlopeSteepness, 0, TileName);
 
             }
         }
@@ -2550,7 +2612,7 @@ public class TileMapRenderer : Loader
                         //RenderSlopeSTile( parent , x, y, t, Water, invert);
                         //RenderSlopeWTile( parent , x, y, t, Water, invert);
                         string TileName = "TileRSW_" + x.ToString("D2") + "_" + y.ToString("D2");
-                        RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_RIDGE_SW, t.shockSteep, 1, TileName);
+                        RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_RIDGE_SW, t.TileSlopeSteepness, 1, TileName);
                     }
                 }
             }
@@ -2561,7 +2623,7 @@ public class TileMapRenderer : Loader
                 //RenderSlopeWTile( parent , x, y, t, Water, invert);
                 string TileName = "RSW_Ceiling_" + x.ToString("D2") + "_" + y.ToString("D2");
                 t.VisibleFaces[vBOTTOM] = true;
-                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_VALLEY_NE, t.shockSteep, 0, TileName);
+                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_VALLEY_NE, t.TileSlopeSteepness, 0, TileName);
 
 
             }
@@ -2591,7 +2653,7 @@ public class TileMapRenderer : Loader
                     //RenderSlopeSTile( parent , x, y, t, Water, invert);
                     //RenderSlopeETile( parent , x, y, t, Water, invert);
                     string TileName = "TileRSE_" + x.ToString("D2") + "_" + y.ToString("D2");
-                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_RIDGE_SE, t.shockSteep, 1, TileName);
+                    RenderSlopedCuboid(parent, x, y, t, Water, FLOOR_ADJ, t.floorHeight, TILE_RIDGE_SE, t.TileSlopeSteepness, 1, TileName);
                 }
             }
             else
@@ -2602,7 +2664,7 @@ public class TileMapRenderer : Loader
              //RenderSlopeWTile( parent , x, y, t, Water, invert);
                 string TileName = "RNW_Ceiling_" + x.ToString("D2") + "_" + y.ToString("D2");
                 t.VisibleFaces[vBOTTOM] = true;
-                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_VALLEY_NW, t.shockSteep, 0, TileName);
+                RenderSlopedCuboid(parent, x, y, t, Water, CEILING_HEIGHT - t.ceilingHeight, CEILING_HEIGHT + CEIL_ADJ, TILE_VALLEY_NW, t.TileSlopeSteepness, 0, TileName);
 
 
             }
@@ -4420,7 +4482,7 @@ public class TileMapRenderer : Loader
             case TileMap.TILE_SLOPE_W:
             case TileMap.TILE_SLOPE_N:
             case TileMap.TILE_SLOPE_S:
-                CurrentTileMap().Tiles[TileX, TileY].shockSteep = 1;
+                CurrentTileMap().Tiles[TileX, TileY].TileSlopeSteepness = 1;
                 break;
         }
 
@@ -4429,7 +4491,7 @@ public class TileMapRenderer : Loader
         //if (int.TryParse(TileHeightDetails.text,out FloorHeight))
         //{
         CurrentTileMap().Tiles[TileX, TileY].floorHeight = NewFloorHeight; //FloorHeight*2;	
-                                                                                                        //}
+                                                                           //}
 
         CurrentTileMap().Tiles[TileX, TileY].floorTexture = NewFloorTexture;
         //int ActualTextureIndex= CurrentTileMap().texture_map[FloorTextureSelect.value+48];
@@ -4621,6 +4683,218 @@ public class TileMapRenderer : Loader
 
 
     /// <summary>
+    /// Renders a Terra Nova map using the Unity Terrain System
+    /// </summary>
+    /// <param name="parent"></param>
+    /// <param name="data"></param>
+    /// Limit of 32 textures in a terrain so rotation is not implemented.
+    /// <returns></returns>
+    public static bool RenderTNovaMapTerrain(Transform parent, char[] data)
+    {
+        //Load the heights from tnova data
+        float[,] height = GameWorldController.instance.TNovaTerrain.terrainData.GetHeights(0, 0, 513, 513); //new float[513, 513];
+        short[,] texture = new short[513, 513];
+        short[,] rotation = new short[513, 513];
+        long address_pointer = 0;
+        int[] textureCounter = new int[64];
+        address_pointer = 0;
+        int meshcount = 1;
+        float maxHeight = 0; float minHeight = 0;
+
+        for (int x = 0; x <= height.GetUpperBound(0); x++)
+        {
+            for (int y = 0; y <= height.GetUpperBound(1); y++)
+            {
+                meshcount++;
+                int byte0 = (int)DataLoader.getValAtAddress(data, address_pointer++, 8);//Texture
+                int byte1 = (int)DataLoader.getValAtAddress(data, address_pointer++, 8);//Rotation and part of height
+                int byte2 = (int)DataLoader.getValAtAddress(data, address_pointer++, 8);//Object object list index?
+
+                if (byte0 > 191)
+                    byte0 = byte0 - 64;
+                if (byte0 > 127)
+                    byte0 = byte0 - 128;
+                if (byte0 > 63)
+                    byte0 = byte0 - 64;
+
+                texture[x, y] = (short)byte0;
+                textureCounter[byte0]++;
+
+                //byte1 =byte1 & 0xF0;         //AND with 11110000b: remove shadow+rotation in lower half of byte
+
+                //UNITY has a limit of 32 textures in terrains. ignore rotation for the moment.
+                rotation[x, y] = (short)((byte1 & 0x0F) >> 2);
+
+                height[x, y] = (float)((byte2 << 4) | ((byte1 & 0xF0) >> 4));
+                if (byte2 > 0x7F)            //negative height
+                { height[x, y] = (float)(height[x, y] - 4096); }
+                //height[x,y] =height[x,y] + 2048;
+                if ((x == 0) && (y == 0))
+                {
+                    maxHeight = (float)height[x, y];
+                    minHeight = (float)height[x, y];
+                }
+                if (height[x, y] > maxHeight)
+                {
+                    maxHeight = (float)height[x, y];
+                }
+                if (height[x, y] < minHeight)
+                {
+                    minHeight = (float)height[x, y];
+                }
+
+            }
+        }
+
+        for (int x = 0; x <= height.GetUpperBound(0); x++)
+        {
+            for (int y = 0; y <= height.GetUpperBound(1); y++)
+            {
+                height[x, y] = (height[x, y] + 4096) / 8192;//keep heights between 0.0 and 1.0
+            }
+        }
+
+        int totaltextures = 0;
+        for (int i = 0; i <= textureCounter.GetUpperBound(0); i++)
+        {
+            if (textureCounter[i] > 0)
+            {
+                totaltextures++;
+            }
+        }
+        Debug.Log("Total textures for map is " + totaltextures);
+
+        int[] textureMap = new int[totaltextures + 1];
+        int counter = 0;
+        for (int i = 0; i < 64; i++)
+        {
+            if (textureCounter[i] > 0)
+            {
+                textureMap[counter] = i;//store texture no in map.
+                textureCounter[i] = counter++;//store map address in the counter array
+            }
+        }
+        //int j = 0;
+        //Texture2D[] allnovatextures = GetTNovaTextures();
+        //for (int x = 0; x < 4; x++)
+        //{
+        //    for (int y = 0; y < 4; y++)
+        //    {
+        //        // UWHUD.instance.test.texture = 
+        //        GameWorldController.instance.allnova[j++] = TNovaMegaTexure(texture, rotation, allnovatextures, 128, 128, x * 128, y * 128);
+        //    }
+        //}
+
+
+
+        //TODO: link the webpage where I scrobbed this code from.
+
+        // Get a reference to the terrain data
+        //GameWorldController.instance.TNovaTerrain.terrainData = new TerrainData();
+        TerrainData terrainData = GameWorldController.instance.TNovaTerrain.terrainData;
+        terrainData.heightmapResolution = 513;
+        //Load terrain textures
+        SplatPrototype[] tex = new SplatPrototype[totaltextures + 1];
+        for (int i = 0; i <= textureMap.GetUpperBound(0); i++)
+        {
+            tex[i] = new SplatPrototype();
+            tex[i].texture = (Texture2D)Resources.Load("Nova/Textures/" + textureMap[i]);   //Sets the texture
+            tex[i].tileSize = new Vector2(1, 1);    //Sets the size of the texture            
+        }
+        terrainData.splatPrototypes = tex;
+
+        // Splatmap data is stored internally as a 3d array of floats, so declare a new empty array ready for your custom splatmap data:
+        float[,,] splatmapData = new float[terrainData.alphamapWidth, terrainData.alphamapHeight, terrainData.alphamapLayers];
+
+        for (int y = 0; y < terrainData.alphamapHeight; y++)
+        {
+            for (int x = 0; x < terrainData.alphamapWidth; x++)
+            {
+                // Normalise x/y coordinates to range 0-1 
+                //float y_01 = (float)y / (float)terrainData.alphamapHeight;
+                //float x_01 = (float)x / (float)terrainData.alphamapWidth;
+
+                // Calculate the normal of the terrain (note this is in normalised coordinates relative to the overall terrain dimensions)
+                // Vector3 normal = terrainData.GetInterpolatedNormal(y_01, x_01);
+
+                // Calculate the steepness of the terrain
+                // float steepness = terrainData.GetSteepness(y_01, x_01);
+
+                // Setup an array to record the mix of texture weights at this point
+                float[] splatWeights = new float[terrainData.alphamapLayers + 1];
+
+                splatWeights[textureCounter[texture[x, y]]] = 1f;
+
+                // Sum of all textures weights must add to 1, so calculate normalization factor from sum of weights
+                float z = splatWeights.Sum();
+
+                // Loop through each terrain texture
+                for (int i = 0; i < terrainData.alphamapLayers; i++)
+                {
+
+                    // Normalize so that sum of all texture weights = 1
+                    splatWeights[i] /= z;
+
+                    // Assign this point to the splatmap array
+                    splatmapData[x, y, i] = splatWeights[i];
+                }
+            }
+        }
+
+        // Finally assign the new splatmap to the terrainData:
+        terrainData.SetAlphamaps(0, 0, splatmapData);
+
+
+
+        GameWorldController.instance.TNovaTerrain.terrainData.SetHeights(0, 0, height);
+
+        return true;
+    }
+
+    private static Texture2D TNovaMegaTexure(short[,] texture, short[,] rotation, Texture2D[] alltext , int SizeX, int SizeY ,int offsetX, int offsetY)
+    {
+       // Texture2D[] alltext = GetTNovaTextures();
+        Texture2D test = new Texture2D(SizeX * 64, SizeY * 64);
+        for (int x = 0; x < SizeX; x++)
+        {
+            for (int y = 0; y < SizeY; y++)
+            {
+                test.SetPixels(x * 64, y * 64, 64, 64, alltext[texture[x + offsetX, y + offsetY] + ((rotation[x + offsetX , y + offsetY]) * 64)].GetPixels());
+            }
+        }
+        test.Apply();
+        return test;
+        //UWHUD.instance.test.texture = test;
+    }
+
+    private static Texture2D[] GetTNovaTextures()
+    {
+        Texture2D[] alltext = new Texture2D[64 * 4];
+        for (int i = 0; i < 64; i++)
+        {//rot =0
+            alltext[i] = ArtLoader.rotateTexture((Texture2D)Resources.Load("Nova/Textures/" + i), false);
+        }
+        for (int i = 64; i < 128; i++)
+        {//rot =1
+            alltext[i] = (Texture2D)Resources.Load("Nova/Textures/" + (i - 64));
+        }
+
+        for (int i = 128; i < 192; i++)
+        {//rot =2
+            alltext[i] = ArtLoader.rotateTexture((Texture2D)Resources.Load("Nova/Textures/" + (i - 128)), true);
+        }
+
+        for (int i = 192; i < 256; i++)
+        {//rot =3
+            alltext[i] = ArtLoader.rotateTexture(ArtLoader.rotateTexture((Texture2D)Resources.Load("Nova/Textures/" + (i - 192)), true), true);
+        }
+
+        return alltext;
+    }
+
+
+
+    /// <summary>
     /// Renders a Terra Nova Strike Force Centauri tilemap.
     /// </summary>
     /// <param name="parent"></param>
@@ -4628,11 +4902,19 @@ public class TileMapRenderer : Loader
     /// <returns></returns>
     public static bool RenderTNovaMap(Transform parent, char[] data)
     {
+
+//BlockSize * No of Blocks must equal 512, setting values too extremely may cause performance issues!
+        const int NoOfBlocks = 8;
+        const int BlockSize = 64;
+
+
         short[,] height = new short[513, 513];
         short[,] texture = new short[513, 513];
         short[,] rotation = new short[513, 513];
         short[] textureCount = new short[64];
         short[] textureUsage = new short[64];
+
+
 
         float brushSize = 12f;
 
@@ -4682,16 +4964,13 @@ public class TileMapRenderer : Loader
         }
 
 
-
-
-        //Debug.Log("max=" + maxHeight + " min=" + minHeight);
-        for (int sectionX = 0; sectionX < 8; sectionX++)
+        for (int sectionX = 0; sectionX < NoOfBlocks; sectionX++)
         {
-            for (int sectionY = 0; sectionY < 8; sectionY++)
+            for (int sectionY = 0; sectionY < NoOfBlocks; sectionY++)
             {
-                for (int x = sectionX * 64; x < (sectionX + 1) * 64; x++)
+                for (int x = sectionX * BlockSize; x < (sectionX + 1) * BlockSize; x++)
                 {//Count my textures
-                    for (int y = sectionY * 64; y < (sectionY + 1) * 64; y++)
+                    for (int y = sectionY * BlockSize; y < (sectionY + 1) * BlockSize; y++)
                     {
                         textureCount[texture[x, y]]++;//Tracks how many of each texture there is
                     }
@@ -4724,19 +5003,20 @@ public class TileMapRenderer : Loader
 
                 MeshFilter mf = Tile.AddComponent<MeshFilter>();
                 MeshRenderer mr = Tile.AddComponent<MeshRenderer>();
+
                 //  MeshCollider mc = Tile.AddComponent<MeshCollider>();
                 // mc.sharedMesh=null;
                 Mesh mesh = new Mesh();
-                meshcount = 64 * 64;
-                // mesh.subMeshCount=64;//meshcount;//Should be no of visible faces
+                mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+                meshcount = BlockSize * BlockSize;
                 mesh.subMeshCount = textureUsageCounter;
                 Vector3[] verts = new Vector3[meshcount * 4];
                 Vector2[] uvs = new Vector2[meshcount * 4];
 
                 int FaceCounter = 0;
-                for (int x = sectionX * 64; x < (sectionX + 1) * 64; x++)
+                for (int x = sectionX * BlockSize; x < (sectionX + 1) * BlockSize; x++)
                 {
-                    for (int y = sectionY * 64; y < (sectionY + 1) * 64; y++)
+                    for (int y = sectionY * BlockSize; y < (sectionY + 1) * BlockSize; y++)
                     {
                         // textureCount[texture[x,y]]++;//Tracks how many of each texture there is
                         float[] heights = new float[4];
@@ -4812,9 +5092,9 @@ public class TileMapRenderer : Loader
                         int[] tris = new int[textureCount[t] * 6];
                         FaceCounter = 0;
                         int triCounter = 0;
-                        for (int x = sectionX * 64; x < (sectionX + 1) * 64; x++)
+                        for (int x = sectionX * BlockSize; x < (sectionX + 1) * BlockSize; x++)
                         {
-                            for (int y = sectionY * 64; y < (sectionY + 1) * 64; y++)
+                            for (int y = sectionY * BlockSize; y < (sectionY + 1) * BlockSize; y++)
                             {
                                 if (texture[x, y] == t)
                                 {//This mesh uses the texture.
@@ -4838,6 +5118,7 @@ public class TileMapRenderer : Loader
                 mesh.RecalculateNormals();
                 mesh.RecalculateBounds();
                 mf.mesh = mesh;
+
             }
         }
 

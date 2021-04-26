@@ -26,6 +26,14 @@ public class object_base : UWEBase
     //Static Properties
 
 
+    public short ObjectIndex
+    {
+        get
+        {
+            return (short)objInt().ObjectIndex;
+        }
+    }
+
     public int item_id
     {
         get
@@ -408,28 +416,18 @@ public class object_base : UWEBase
     }
 
 
-    public short ProjectileHeadingMajor
+    public short ProjectileHeading
     {
         get
         {
-            return objInt().ProjectileHeadingMajor;
+            return objInt().ProjectileHeading;
         }
         set
         {
-            objInt().ProjectileHeadingMajor = value;
+            objInt().ProjectileHeading = value;
         }
     }
-    public short ProjectileHeadingMinor
-    {
-        get
-        {
-            return objInt().ProjectileHeadingMinor;
-        }
-        set
-        {
-            objInt().ProjectileHeadingMinor = value;
-        }
-    }
+
     public short Projectile_Speed
     {
         get
@@ -452,17 +450,17 @@ public class object_base : UWEBase
             objInt().Projectile_Pitch = value;
         }
     }
-    public short Projectile_Sign
-    {
-        get
-        {
-            return objInt().Projectile_Sign;
-        }
-        set
-        {
-            objInt().Projectile_Sign = value;
-        }
-    }
+    //public short Projectile_Sign
+    //{
+    //    get
+    //    {
+    //        return objInt().Projectile_Sign;
+    //    }
+    //    set
+    //    {
+    //        objInt().Projectile_Sign = value;
+    //    }
+    //}
 
 
     ///A trigger to activate when this object is picked up.
@@ -523,7 +521,7 @@ public class object_base : UWEBase
     {
         //CheckReferences();
         UWHUD.instance.MessageScroll.Add(StringController.instance.GetFormattedObjectNameUW(objInt()) + OwnershipString());
-        if ((link != 0) && (objInt().isQuant == false) && (enchantment == 0))
+        if ((link != 0) && (objInt().isQuantityBln == false) && (enchantment == 0))
         {
             if (ObjectLoader.GetItemTypeAt(link) == ObjectInteraction.A_LOOK_TRIGGER)
             {
@@ -544,10 +542,17 @@ public class object_base : UWEBase
     /// <param name="ObjectUsed">Object used.</param>
     public virtual bool ActivateByObject(ObjectInteraction ObjectUsed)
     {
-        //CheckReferences();
         if (UWCharacter.InteractionMode == UWCharacter.InteractionModeUse)
         {
-            FailMessage();
+            switch (ObjectUsed.GetItemType())
+                {
+                case ObjectInteraction.ANVIL:
+                    UWHUD.instance.MessageScroll.Add(StringController.instance.GetString(1, StringController.str_you_cannot_repair_that_));
+                    break;
+                default:
+                    FailMessage();
+                    break;
+                }            
             UWHUD.instance.CursorIcon = UWHUD.instance.CursorIconDefault;
             CurrentObjectInHand = null;
             return true;
@@ -577,9 +582,9 @@ public class object_base : UWEBase
                 {//Hope this does'nt mess up everything!
                     if (
                         (
-                        (link != 0) && (objInt().isQuant == false) 
+                        (link != 0) && (objInt().isQuantityBln == false) 
                         ||
-                        (link == 1) && (objInt().isQuant)
+                        (link == 1) && (objInt().isQuantityBln)
                         )
                         && 
                         (enchantment == 0)
@@ -652,7 +657,7 @@ public class object_base : UWEBase
     /// If object has a pickup link then the object referenced is activated
     public virtual bool PickupEvent()
     {
-        if ((link != 0) && (objInt().isQuant == false) && (enchantment == 0))
+        if ((link != 0) && (objInt().isQuantityBln == false) && (enchantment == 0))
         {
             if (ObjectLoader.GetItemTypeAt(link) == ObjectInteraction.A_PICK_UP_TRIGGER)
             {
@@ -1286,65 +1291,67 @@ return false;*/
     /// Assumes object has no rotation.
     public static Vector3 ProjectilePropsToVector(object_base obj)
     {
-        Vector3 dir;
-        Quaternion deflectionXY = Quaternion.AngleAxis(45f * (float)(obj.ProjectileHeadingMinor) / 32f, Vector3.up);
-        //Quaternion deflectionZ;
-        float z;
-        if (obj.Projectile_Sign == 0)
-        {
-            //projectile goes down
-            z = -1 * ((float)(obj.Projectile_Pitch) / 7f);
-        }
-        else
-        {
-            //projectile goes up
-            z = +1 * ((float)(obj.Projectile_Pitch) / 7f);
-        }
-        switch (obj.ProjectileHeadingMajor)
-        {
-            case 1:
-                //ne
-                dir = new Vector3(1f, z, 1f);
-                break;
-            //ok
-            case 2:
-                //e
-                dir = new Vector3(1f, z, 0f);
-                break;
-            //ok
-            case 3:
-                //se
-                dir = new Vector3(1f, z, -1f);
-                break;
-            //ok
-            case 4:
-                //s
-                dir = new Vector3(0f, z, -1f);
-                break;
-            case 5:
-                //sw
-                dir = new Vector3(-1f, z, -1f);
-                break;
-            case 6:
-                //w
-                dir = new Vector3(-1f, z, 0f);
-                break;
-            //ok
-            case 7:
-                //nw						
-                dir = new Vector3(-1f, z, 1f);
-                break;
-            //ok
-            default:
-            //north
-            case 0:
-                dir = new Vector3(0f, z, 1f);
-                break;
-                //ok
-        }
+        return Vector3.zero;
 
-        //	Debug.Log(deflectionXY*dir);
-        return deflectionXY * dir;
+        //////Vector3 dir;
+        //////Quaternion deflectionXY = Quaternion.AngleAxis((float)(obj.ProjectileHeadingMinor) / 32f, Vector3.up);
+        ////////Quaternion deflectionZ;
+        //////float z;
+        //////if ((obj.Projectile_Pitch>>3) == 0)
+        //////{
+        //////    //projectile goes down
+        //////    z = -1 * ((float)(obj.Projectile_Pitch) / 7f);
+        //////}
+        //////else
+        //////{
+        //////    //projectile goes up
+        //////    z = +1 * ((float)(obj.Projectile_Pitch) / 7f);
+        //////}
+        //////switch (obj.ProjectileHeadingMajor)
+        //////{
+        //////    case 1:
+        //////        //ne
+        //////        dir = new Vector3(1f, z, 1f);
+        //////        break;
+        //////    //ok
+        //////    case 2:
+        //////        //e
+        //////        dir = new Vector3(1f, z, 0f);
+        //////        break;
+        //////    //ok
+        //////    case 3:
+        //////        //se
+        //////        dir = new Vector3(1f, z, -1f);
+        //////        break;
+        //////    //ok
+        //////    case 4:
+        //////        //s
+        //////        dir = new Vector3(0f, z, -1f);
+        //////        break;
+        //////    case 5:
+        //////        //sw
+        //////        dir = new Vector3(-1f, z, -1f);
+        //////        break;
+        //////    case 6:
+        //////        //w
+        //////        dir = new Vector3(-1f, z, 0f);
+        //////        break;
+        //////    //ok
+        //////    case 7:
+        //////        //nw						
+        //////        dir = new Vector3(-1f, z, 1f);
+        //////        break;
+        //////    //ok
+        //////    default:
+        //////    //north
+        //////    case 0:
+        //////        dir = new Vector3(0f, z, 1f);
+        //////        break;
+        //////        //ok
+        //////}
+
+        ////////	Debug.Log(deflectionXY*dir);
+        //////return deflectionXY * dir;
     }
 
     /// <summary>
@@ -1361,6 +1368,16 @@ return false;*/
     public virtual void InitSound()
     {
 
+    }
+
+    /// <summary>
+    /// Difficuly level for repair.
+    /// For armour and weapons return item durability.
+    /// </summary>
+    /// <returns></returns>
+    public virtual int repairEstimate()
+    {
+        return -1;
     }
 
 }

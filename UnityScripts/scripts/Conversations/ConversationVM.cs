@@ -631,6 +631,7 @@ n+08   Int16   return type (0x0000=void, 0x0129=int, 0x012B=string)*/
         Teleport = false;
         SettingUpFight = false;
         StopAllCoroutines();
+        UWHUD.instance.EnableDisableControl(UWHUD.instance.FreeLookCursor.gameObject, false);
         StartCoroutine(RunConversationVM(npc));
     }
 
@@ -649,6 +650,7 @@ n+08   Int16   return type (0x0000=void, 0x0129=int, 0x012B=string)*/
     {
         //basep = 0;
         //stack.result_register = 1;//Set a default value
+        
         bool finished = false;
         stack = new CnvStack(4096);
         stack.set_stackp(200);//Skip over imported memory for the moment
@@ -1124,6 +1126,7 @@ n+08   Int16   return type (0x0000=void, 0x0129=int, 0x012B=string)*/
                 finished = true;
             }
         }
+        yield return new WaitForSecondsRealtime(2f);
         yield return StartCoroutine(EndConversation(npc));
     }
 
@@ -1132,6 +1135,8 @@ n+08   Int16   return type (0x0000=void, 0x0129=int, 0x012B=string)*/
     /// </summary>
     public IEnumerator EndConversation(NPC npc)
     {
+
+        UWHUD.instance.EnableDisableControl(UWHUD.instance.FreeLookCursor.gameObject, true);
 
         //Copy back private variables to the globals file.
 
@@ -1426,6 +1431,7 @@ n+08   Int16   return type (0x0000=void, 0x0129=int, 0x012B=string)*/
 
     IEnumerator say_op(string text, int PrintType)
     {
+        //Debug.Log("Saying :" + text);
         yield return new WaitForSecondsRealtime(0.2f);
         if (text.Trim() == "")
         {
@@ -2233,7 +2239,7 @@ n+08   Int16   return type (0x0000=void, 0x0129=int, 0x012B=string)*/
                         case 0://Challenge a fighter
                             {
                                 SettingUpFight = true;
-                                Quest.instance.ArenaOpponents[0] = npc.objInt().objectloaderinfo.index;
+                                Quest.instance.ArenaOpponents[0] = npc.objInt().BaseObjectData.index;
                                 Quest.instance.FightingInArena = true;
                                 break;
                             }
@@ -2329,7 +2335,7 @@ n+08   Int16   return type (0x0000=void, 0x0129=int, 0x012B=string)*/
                 {
                     TextLine = TextSubstitute(TextLine);
                 }
-                //UWHUD.instance.MessageScroll.Add(j + "." + TextLine + "");//  \n
+
                 UWHUD.instance.ConversationOptions[j - 1].SetText(j + "." + TextLine + "");
                 UWHUD.instance.EnableDisableControl(UWHUD.instance.ConversationOptions[j - 1], true);
                 j++;
@@ -2423,7 +2429,13 @@ n+08   Int16   return type (0x0000=void, 0x0129=int, 0x012B=string)*/
     {
         PlayerTypedAnswer = "";
         //tl_input.Set(">");
-        PlayerInput.text = ">";
+        //PlayerInput.text = ">";
+        for (int j=0; j <= UWHUD.instance.ConversationOptions.GetUpperBound(0);j++)
+        {
+            UWHUD.instance.ConversationOptions[j].SetText("");
+        }
+        UWHUD.instance.ConversationOptions[0].SetText(">");
+
         InputField inputctrl = UWHUD.instance.InputControl;
         inputctrl.gameObject.SetActive(true);
         inputctrl.gameObject.GetComponent<InputHandler>().target = this.gameObject;
@@ -2469,7 +2481,10 @@ n+08   Int16   return type (0x0000=void, 0x0129=int, 0x012B=string)*/
     {
         WaitingForTyping = true;
         while (WaitingForTyping)
-        { yield return null; }
+        {
+            UWHUD.instance.ConversationOptions[0].SetText(">" + UWHUD.instance.InputControl.text);
+            yield return null;
+        }
     }
 
     /// <summary>
@@ -2740,7 +2755,7 @@ n+08   Int16   return type (0x0000=void, 0x0129=int, 0x012B=string)*/
             if (objsGiven[i] != null)
             {
                 GameWorldController.MoveToWorld(objsGiven[i]);
-                stack.Set(start + i, objsGiven[i].GetComponent<ObjectInteraction>().objectloaderinfo.index);//Update the object index in the stack so I keep track of it.
+                stack.Set(start + i, objsGiven[i].GetComponent<ObjectInteraction>().BaseObjectData.index);//Update the object index in the stack so I keep track of it.
             }
         }
         if (SomethingGiven == true)
@@ -3384,7 +3399,7 @@ return value appears to have something to do with if the door is broken or not.
         else
         {
             //obj.link=locals[link]+512;
-            if (obj.isQuant)
+            if (obj.isQuantityBln)
             {
                 obj.link = stack.at(link);
             }
@@ -3574,7 +3589,7 @@ return value appears to have something to do with if the door is broken or not.
     /// checks if the first string contains the second string,
     /// </summary>
     /// <returns>returns 1 when the string was found, 0 when not</returns>
-    public int contains(int pString1, int pString2)
+    public int contains(int pStringSearch1, int pStringFind2)
     {//pString2 is the string memory.
      //id=0007 name="contains" ret_type=int
      //parameters:   arg1: pointer to first string id
@@ -3582,14 +3597,15 @@ return value appears to have something to do with if the door is broken or not.
      //description:  checks if the first string contains the second string,
      //case-independent.
      //return value: returns 1 when the string was found, 0 when not
-        string String2 = StringController.instance.GetString(conv[currConv].StringBlock, stack.at(pString2));
-        string String1 = StringController.instance.GetString(conv[currConv].StringBlock, stack.at(pString1));
-        Debug.Log("checking to see if " + String2 + " contains " + String1);
-        if (String1.Trim() == "")
+        string StringToFind = StringController.instance.GetString(conv[currConv].StringBlock, stack.at(pStringFind2));
+        string StringToSearch = StringController.instance.GetString(conv[currConv].StringBlock, stack.at(pStringSearch1));
+        Debug.Log("checking to see if " + StringToSearch + " contains " + StringToFind);
+
+        if (StringToSearch.Trim() == "")
         {
             return 0;//no cheating...
         }
-        if (String2.ToUpper().Contains(String1.ToUpper())) 
+        if (StringToSearch.ToUpper().Contains(StringToFind.ToUpper())) 
         {
             return 1;
         }
@@ -3807,7 +3823,7 @@ return value: none
              //
                 if (objGiven != null)
                 {
-                    if ((objGiven.isQuant == true)
+                    if ((objGiven.isQuantityBln == true)
                             &&
                             (objGiven.link > 1)
                             &&
@@ -3823,7 +3839,7 @@ return value: none
 
                         GameWorldController.MoveToWorld(objGiven);
                         //Split.name = Split.name+"_"+UWCharacter.Instance.summonCount++;
-                        Split.name = ObjectLoader.UniqueObjectName(Split.GetComponent<ObjectInteraction>().objectloaderinfo);//(objGiven.GetComponent<ObjectInteraction>()
+                        Split.name = ObjectLoader.UniqueObjectName(Split.GetComponent<ObjectInteraction>().BaseObjectData);//(objGiven.GetComponent<ObjectInteraction>()
                         cn.AddItemToContainer(objGiven);
                     }
                     else
@@ -3950,7 +3966,7 @@ return value: none
         ObjectInteraction obj = npc.GetComponent<Container>().GetItemAt((short)pos);
         if (obj != null)
         {
-            return obj.objectloaderinfo.index;
+            return obj.BaseObjectData.index;
         }
         return 0;
     }
@@ -4115,13 +4131,13 @@ return value: 1 when found (?)
         //description:  creates item in npc inventory
         //return value: inventory object list position
 
-        ObjectLoaderInfo newobjt = ObjectLoader.newObject(item_id, 0, 0, 1, 256);
+        ObjectLoaderInfo newobjt = ObjectLoader.newWorldObject(item_id, 0, 0, 1, 256);
         newobjt.is_quant = 1;
         ObjectInteraction myObj = ObjectInteraction.CreateNewObject(CurrentTileMap(), newobjt, CurrentObjectList().objInfo, GameWorldController.instance.DynamicObjectMarker().gameObject, GameWorldController.instance.InventoryMarker.transform.position);
         //GameWorldController.MoveToWorld(myObj.GetComponent<ObjectInteraction>()); NOT NEEDED THIS OBJECT IS ALREADY IN THE WORLD!!!!
         ConversationVM.BuildObjectList();//reflect update to object list since movetoworld is not called
         npc.GetComponent<Container>().AddItemToContainer(myObj);
-        return myObj.GetComponent<ObjectInteraction>().objectloaderinfo.index;
+        return myObj.GetComponent<ObjectInteraction>().BaseObjectData.index;
 
     }
 
@@ -4397,7 +4413,7 @@ description:  places a generated object in underworld
 
         for (int i = 0; i < NoOfFighters; i++)
         {
-            ObjectLoaderInfo objNew = ObjectLoader.newObject(Random.Range(120, 122), 36, 27, 0, 1);
+            ObjectLoaderInfo objNew = ObjectLoader.newWorldObject(Random.Range(120, 122), 36, 27, 0, 1);
             Vector3 pos = CurrentTileMap().getTileVector(tileX[i], tileY[i]);
             ObjectInteraction objI = ObjectInteraction.CreateNewObject(CurrentTileMap(), objNew, CurrentObjectList().objInfo, GameWorldController.instance.DynamicObjectMarker().gameObject, pos);
             objI.GetComponent<NPC>().npc_attitude = 0;
@@ -4456,7 +4472,7 @@ description:  places a generated object in underworld
 
     public static void BuildObjectList()
     {
-        ObjectLoader.UpdateObjectList(CurrentTileMap(), CurrentObjectList());
+        ObjectLoader.RebuildObjectListUW(CurrentTileMap(), CurrentObjectList());
         int noOfInventoryItems = GameWorldController.instance.InventoryMarker.transform.childCount;
         ObjectMasterList = new string[1024 + noOfInventoryItems + 1];
         ObjectLoaderInfo[] objList = CurrentObjectList().objInfo;

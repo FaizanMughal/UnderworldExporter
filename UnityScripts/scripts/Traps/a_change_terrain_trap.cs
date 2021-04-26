@@ -82,12 +82,12 @@ public class a_change_terrain_trap : trap_base
                     TileMapRenderer.UpdateTile(tileXToChange, tileYToChange, tileTypeToChangeTo, newTileHeight, tileToChange.floorTexture, newWallTexture, false);
                     Destroy(tile);
 
-                    if (tileToChange.isDoor)
+                    if (tileToChange.IsDoorForNPC)
                     {//The door may be rendered
                         GameObject door = DoorControl.findDoor(tileToChange.tileX, tileToChange.tileY);
                         if (door != null)
                         {
-                            string doorname = ObjectLoader.UniqueObjectName(door.GetComponent<ObjectInteraction>().objectloaderinfo);
+                            string doorname = ObjectLoader.UniqueObjectName(door.GetComponent<ObjectInteraction>().BaseObjectData);
                             DestroyDoorPortion("front_leftside_" + doorname);
                             DestroyDoorPortion("front_over_" + doorname);
                             DestroyDoorPortion("front_rightside_" + doorname);
@@ -103,7 +103,7 @@ public class a_change_terrain_trap : trap_base
                                     GameWorldController.instance.SceneryModel.gameObject,
                                     CurrentTileMap(),
                                     CurrentObjectList(),
-                                    door.GetComponent<ObjectInteraction>().objectloaderinfo.index);
+                                    door.GetComponent<ObjectInteraction>().BaseObjectData.index);
                             /*								TileMapRenderer.RenderDoorwayFront(
                                                             GameWorldController.instance.LevelModel,
                                                                                 CurrentTileMap(),
@@ -118,7 +118,7 @@ public class a_change_terrain_trap : trap_base
                                                                                 );*/
                             Vector3 objPos = door.transform.position;
                             ObjectInteraction.CreateNewObject(CurrentTileMap(),
-                                                            door.GetComponent<ObjectInteraction>().objectloaderinfo,
+                                                            door.GetComponent<ObjectInteraction>().BaseObjectData,
                                                             CurrentObjectList().objInfo,
                                                             GameWorldController.instance.LevelModel, objPos
                                                     );

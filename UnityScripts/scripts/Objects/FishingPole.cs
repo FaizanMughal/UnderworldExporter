@@ -34,26 +34,23 @@ public override bool use ()
 	
 
 		for (int x=-1; x<=1;x++)
-		{//test the tile and it's neighbours for water.
+		{//test the tile and it's neighbours for water that is below the player.
 			for (int y=-1; y<=1;y++)
 			{
-				if (CurrentTileMap().Tiles[tileX+x,tileY+y].isWater)
+				if ((CurrentTileMap().Tiles[tileX+x,tileY+y].isWater) && (CurrentTileMap().Tiles[tileX + x, tileY + y].floorHeight <= CurrentTileMap().Tiles[tileX, tileY].floorHeight) )
 				{
-					if (Random.Range (0,10)>=7)
-					{//catch something or test for encumerance
+                    //Per disassembly fishing uses the Track Skill to see if the player actually catches something.
+                    //I think the (track skill plus 7) / 8  must beat the random roll 0 to 4 to catch a fish
+                    //The below is almost the vanilla behaviour except I don't know what the random roll range is.
+                    
+					if (Random.Range (0,5)<=(UWCharacter.Instance.PlayerSkills.Track + 7) / 8)
+					{//catch something and test for encumerance
 						//000~001~099~You catch a lovely fish.
 						if ((GameWorldController.instance.commonObject.properties[182].mass*0.1f) <= UWCharacter.Instance.playerInventory.getEncumberance())
 						{
 							UWHUD.instance.MessageScroll.Add (StringController.instance.GetString (1,StringController.str_you_catch_a_lovely_fish_));
                             ObjectInteraction FishobjInt = CreateFish();
 							CurrentObjectInHand= FishobjInt;
-                            //if (FishobjInt!=null)
-							//{
-								//FishobjInt.UpdateAnimation();
-								//UWHUD.instance.CursorIcon= //FishobjInt.InventoryDisplay.texture;
-								//UWHUD.instance.CursorIcon= FishobjInt.GetInventoryDisplay().texture ;//FishobjInt.InventoryDisplay.texture;
-							//}
-
 							UWCharacter.InteractionMode=UWCharacter.InteractionModePickup;
 							InteractionModeControl.UpdateNow=true;
 						}
@@ -80,7 +77,7 @@ public override bool use ()
 	/// <returns>The fish.</returns>
 	ObjectInteraction CreateFish()
 	{
-		ObjectLoaderInfo newobjt= ObjectLoader.newObject(182,40,0,1,256);
+		ObjectLoaderInfo newobjt= ObjectLoader.newWorldObject(182,40,0,1,256);
 		ObjectInteraction fishy = ObjectInteraction.CreateNewObject(CurrentTileMap(),newobjt,CurrentObjectList().objInfo, GameWorldController.instance.InventoryMarker.gameObject, GameWorldController.instance.InventoryMarker.transform.position);
 		fishy.gameObject.name= ObjectLoader.UniqueObjectName(newobjt);
 		fishy.isquant=1;

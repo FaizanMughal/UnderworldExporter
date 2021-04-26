@@ -37,8 +37,10 @@ public class a_teleport_trap : trap_base {
         //0=north
         //1=northeast 
         //2=east and so on
-        UWCharacter.Instance.transform.eulerAngles = new Vector3(0f, ((float)heading*45f), 0f);
-        UWCharacter.Instance.playerCam.transform.localRotation = Quaternion.identity;
+        
+        //Change character heading
+        //UWCharacter.Instance.transform.eulerAngles = new Vector3(0f, ((float)heading*45f), 0f);
+        //UWCharacter.Instance.playerCam.transform.localRotation = Quaternion.identity;
 
         UWCharacter.Instance.JustTeleported=true;	
 		UWCharacter.Instance.teleportedTimer=0f;
@@ -84,8 +86,8 @@ public class a_teleport_trap : trap_base {
         base.OnDrawGizmos();
         if (zpos==0)
         {
-            float targetX = (float)quality * 1.2f + 0.6f;
-            float targetY = (float)owner * 1.2f + 0.6f;
+           // float targetX = (float)quality * 1.2f + 0.6f;
+            //float targetY = (float)owner * 1.2f + 0.6f;
             Vector3 pos = CurrentTileMap().getTileVector(quality, owner);
             Gizmos.color = Color.white;
             Gizmos.DrawLine(transform.position, pos);
